@@ -108,14 +108,14 @@ const SECTIONS = [
    p0 = baseline start, a = angle (deg), len = word length, cap = first-letter height, sc = small-cap height.
    CALENDAR curves in the reference, so it uses a quadratic curve instead. */
 const SLOTS = [
-  { p0: [222, 104], a: 24,    len: 300, cap: 102, sc: 64 },
-  { p0: [233, 268], a: 3,     len: 282, cap: 122, sc: 66 },
-  { p0: [40, 360],  a: -1,    len: 532, cap: 123, sc: 74 },
-  { p0: [160, 480], a: -8.5,  len: 435, cap: 120, sc: 68 },
-  { p0: [45, 652],  a: -21.5, len: 570, cap: 124, sc: 68 },
-  { p0: [300, 636], a: -27,   len: 300, cap: 94,  sc: 54 },
-  { curve: [[120, 714], [390, 712], [650, 556]], cap: 98,  sc: 52 },
-  { p0: [664, 716], a: -44,   len: 228, cap: 78,  sc: 46 },
+  { p0: [519.8, 88.1], a: 21, len: 279, cap: 77, sc: 50, taper: 0.88 },
+  { p0: [357.1, 124.9], a: 14.5, len: 279, cap: 89, sc: 55, taper: 0.86 },
+  { p0: [95.8, 209.9], a: 6.5, len: 521, cap: 118, sc: 72, taper: 0.82 },
+  { p0: [201.3, 354.8], a: -1.5, len: 409, cap: 97, sc: 66, taper: 0.84 },
+  { p0: [140, 499], a: -9.5, len: 484, cap: 114, sc: 64, taper: 0.8 },
+  { p0: [340, 577.6], a: -17, len: 307, cap: 84, sc: 52, taper: 0.84 },
+  { p0: [368, 678.2], a: -24, len: 316, cap: 84, sc: 50, taper: 0.84 },
+  { p0: [549.7, 697.8], a: -31.5, len: 260, cap: 71, sc: 44, taper: 0.85 },
 ];
 
 /* =========================================================
@@ -203,8 +203,8 @@ const ctx = canvas.getContext("2d");
 words.setAttribute("viewBox", "0 0 760 720");
 
 const FONT = '"Abril Fatface"';
-const HOVER_SCALE = 1.18;   // the selected word grows, like EQUIPMENT in the reference
-const GAP = 0.34;           // how far neighbours move apart, as a fraction of the selected word's cap height
+const HOVER_SCALE = 1.14;   // the selected word grows, like EQUIPMENT in the reference
+const GAP = 0.13;            // how far neighbours move apart, as a fraction of the selected word's cap height
 
 /* The hover splash is the exact shape and colour of the reference splash (assets/splat.png).
    In that image the selected word's baseline starts at (495, 685), runs at 4.3° and is 960 px long,
@@ -248,8 +248,11 @@ function buildMenu() {
 
     // Letters: big first capital, smaller capitals for the rest. Each glyph is placed on the baseline
     // individually and squeezed horizontally so the word spans exactly the reference length.
+    const nL = sec.label.length;
     const letters = [...sec.label].map((ch, k) => {
-      const fs = k === 0 ? capFs : scFs * (0.97 + R() * 0.06);
+      // taper: letters shrink toward the end of the word, giving the fan its 3D depth
+      const tp = nL > 2 ? 1 + ((slot.taper || 1) - 1) * ((k - 1) / (nL - 2)) : 1;
+      const fs = k === 0 ? capFs : scFs * tp * (0.97 + R() * 0.06);
       const glyph = ch.toUpperCase();
       F.ctx.font = `400 ${fs}px ${FONT}`;
       return { glyph, fs, adv: F.ctx.measureText(glyph).width, off: k ? (R() - 0.5) * slot.sc * 0.06 : 0, rot: k ? (R() - 0.5) * 3 : 0 };
@@ -339,6 +342,8 @@ function frame(now) {
   ctx.setTransform(dpr * MS, 0, 0, dpr * MS, dpr * MX, dpr * MY);
   // grow with the word (same timing as its CSS transition)
   const sc = 1 + (HOVER_SCALE - 1) * Math.min(1, easeOut(Math.min(1, (now - stroke.t0) / 320)));
+  const kT = Math.min(1, easeOut(Math.min(1, (now - stroke.t0) / 320)));
+  ctx.translate(it.dx * kT, it.dy * kT);
   ctx.translate(it.origin[0], it.origin[1]); ctx.scale(sc, sc); ctx.translate(-it.origin[0], -it.origin[1]);
 
   const geo = it.geo, kx = geo.len / SPLAT.len, ky = it.slot.cap / SPLAT.cap;
@@ -402,7 +407,8 @@ function bandScore(it, x, y, pad = 0) {
   if (bs < -4 - padS || bs > len + 4 + padS) return Infinity;
   const bx = bp.x + bp.tx * (bs - bp.s), by = bp.y + bp.ty * (bs - bp.s);
   const h = (x - bx) * bp.ty - (y - by) * bp.tx; // height above the baseline
-  const topH = bs < it.capLen ? it.slot.cap : it.slot.sc * 1.04;
+  const tp = 1 + ((it.slot.taper || 1) - 1) * Math.max(0, Math.min(1, bs / len));
+  const topH = bs < it.capLen ? it.slot.cap : it.slot.sc * 1.04 * tp;
   if (h < -it.slot.sc * 0.14 - padS || h > topH + padS) return Infinity;
   return Math.abs(h - it.slot.sc / 2) / it.slot.sc;
 }
@@ -430,13 +436,19 @@ function setActive(i, instant = false) {
     let dx = 0, dy = 0;
     if (A && !on) {
       const d = Math.abs(j - active);
-      const fall = Math.max(0, 1 - (d - 1) * 0.5) * (j < active ? 1 : -0.75);
+      const fall = j < active ? 1 : -1; // the whole group above / below moves together, so nothing collides
       const p = it.geo.pts[Math.floor(it.geo.pts.length / 2)];
       const dist = A.slot.cap * GAP * fall;
       dx = p.ty * dist; dy = -p.tx * dist;
     }
+    if (on && (j === 0 || j === ITEMS.length - 1)) {
+      // the first / last word nudges inward as it grows, so it never leaves the screen
+      const p = it.geo.pts[Math.floor(it.geo.pts.length / 2)];
+      const dist = it.slot.cap * (HOVER_SCALE - 1) * 0.9 * (j === 0 ? -1 : 1);
+      dx = p.ty * dist; dy = -p.tx * dist;
+    }
     it.dx = dx; it.dy = dy; it.scale = on ? HOVER_SCALE : 1;
-    const tf = on ? `scale(${HOVER_SCALE})` : `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px)`;
+    const tf = `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px)` + (on ? ` scale(${HOVER_SCALE})` : "");
     it.el.style.transform = tf;
     it.tagEl.style.transform = tf;
   });
