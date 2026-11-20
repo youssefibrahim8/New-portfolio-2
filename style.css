@@ -232,6 +232,7 @@ body.open .panel { pointer-events: auto; opacity: 1; visibility: visible; transi
   transform-origin: 0 50%;
 }
 .panel-title .small { font-size: .6em; }
+.panel-title .gl { display: inline-block; }
 .panel-sub {
   display: inline-block;
   margin: 6vh 0 0 2vw;

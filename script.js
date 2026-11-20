@@ -547,7 +547,7 @@ pSplat.innerHTML = `<img src="assets/splat.png" alt="" />`;
 dots.innerHTML = SECTIONS.map((s, i) => `<button type="button" aria-label="${s.label}" data-i="${i}"></button>`).join("");
 dots.addEventListener("click", (e) => {
   const b = e.target.closest("button");
-  if (b) location.hash = `#/${SECTIONS[+b.dataset.i].id}`;
+  if (b) goTo(SECTIONS[+b.dataset.i].id);
 });
 
 function openSection(id) {
@@ -626,7 +626,7 @@ function closeSection(updateHash = true) {
 function step(d) {
   const base = isOpen() ? current : active;
   const i = (base + d + SECTIONS.length) % SECTIONS.length;
-  if (isOpen()) location.hash = `#/${SECTIONS[i].id}`;
+  if (isOpen()) goTo(SECTIONS[i].id);
   else setActive(i);
 }
 
@@ -642,6 +642,7 @@ document.getElementById("next").addEventListener("click", () => step(1));
 document.addEventListener("keydown", (e) => {
   const tag = (e.target.tagName || "").toLowerCase();
   if (tag === "input" || tag === "textarea" || e.ctrlKey || e.metaKey || e.altKey) return;
+  if (transitioning) { e.preventDefault(); return; }
   const k = e.key.toLowerCase();
   if (k === "q") { e.preventDefault(); step(-1); return; }
   if (k === "e") { e.preventDefault(); step(1); return; }
@@ -738,6 +739,18 @@ function chipMask(coverage) {
   return CHIP.out;
 }
 
+const CHIP_KEEP = {};
+function chipKeepURL(coverage) {
+  const key = Math.round(coverage * 12);
+  if (CHIP_KEEP[key]) return CHIP_KEEP[key];
+  const c = document.createElement("canvas"); c.width = CHIP.W; c.height = CHIP.H;
+  const g = c.getContext("2d");
+  g.fillStyle = "#000"; g.fillRect(0, 0, c.width, c.height);
+  g.globalCompositeOperation = "destination-out";
+  g.drawImage(chipMask(key / 12), 0, 0);
+  return (CHIP_KEEP[key] = c.toDataURL());
+}
+
 const bgImg = new Image();
 bgImg.src = "assets/background.jpg";
 function drawCover(g, img, W, H) {
@@ -766,27 +779,48 @@ function goTo(id) {
   const hero = document.querySelector(".hero"), plate = document.querySelector(".nameplate");
   const hints = document.querySelector(".hints"), linesEl = document.querySelector(".lines");
 
+  // Q / E between pages plays the same transition: the page title takes the place of the menu words,
+  // and the panel streaks away like the name plate.
+  const fromPage = isOpen();
+  if (fromPage && idx === current) { transitioning = false; return; }
+
   // Letters: some drop out at random in the first 60 ms, the rest scatter as ghosts.
   const R = rng(Date.now() & 0xffff);
   const glyphs = [];
-  ITEMS.forEach((it, j) => {
-    it.el.querySelectorAll("a text").forEach((t) => {
-      const sel = j === idx;
-      glyphs.push({
-        t, base: t.getAttribute("transform"),
-        drop: R() < (sel ? 0.8 : 0.45) ? R() * 60 : Infinity,
-        dx: (R() - 0.65) * 90, dy: (R() - 0.3) * 70, rot: (R() - 0.5) * 50, sc: 1 + R() * 0.7,
-        ghost: R() < 0.4,
-      });
-    });
+  const mk = (el, svg, dropP) => ({
+    el, svg, base: svg ? el.getAttribute("transform") : "",
+    drop: R() < dropP ? R() * 60 : Infinity,
+    dx: (R() - 0.65) * 90, dy: (R() - 0.3) * 70, rot: (R() - 0.5) * 50, sc: 1 + R() * 0.7,
+    ghost: R() < 0.4,
   });
+  if (fromPage) {
+    // split the title into single letters so each one can drop out / scatter
+    const wrap = (node) => [...node.childNodes].forEach((c) => {
+      if (c.nodeType === 3) {
+        const frag = document.createDocumentFragment();
+        [...c.textContent].forEach((ch) => { const sp = document.createElement("span"); sp.className = "gl"; sp.textContent = ch; frag.appendChild(sp); });
+        c.replaceWith(frag);
+      } else wrap(c);
+    });
+    wrap(pTitle);
+    pTitle.querySelectorAll(".gl").forEach((sp) => glyphs.push(mk(sp, false, 0.6)));
+  } else {
+    ITEMS.forEach((it, j) => it.el.querySelectorAll("a text").forEach((t) => glyphs.push(mk(t, true, j === idx ? 0.8 : 0.45))));
+  }
+  const streakEls = fromPage
+    ? [pSub, document.querySelector(".panel-main"), document.getElementById("back")]
+    : [plate, hints];
 
   // Splash: freeze it fully painted so it can break apart.
-  stroke.t0 = performance.now() - 1e4;
-  frame(performance.now());
-  const splashSnap = document.createElement("canvas");
-  splashSnap.width = canvas.width; splashSnap.height = canvas.height;
-  splashSnap.getContext("2d").drawImage(canvas, 0, 0);
+  let splashSnap = null;
+  if (!fromPage) {
+    stroke.t0 = performance.now() - 1e4;
+    frame(performance.now());
+    splashSnap = document.createElement("canvas");
+    splashSnap.width = canvas.width; splashSnap.height = canvas.height;
+    splashSnap.getContext("2d").drawImage(canvas, 0, 0);
+  }
+  const pImg = pSplat.querySelector("img");
   const streakCol = tinted("#d9f3f2");
 
   let opened = false;
@@ -795,19 +829,26 @@ function goTo(id) {
     const t = now - t0;
     // ---- letters ----
     if (t < 260) glyphs.forEach((G) => {
-      if (t >= G.drop) { G.t.style.opacity = 0; return; }
+      if (t >= G.drop) { G.el.style.opacity = 0; return; }
       const k = Math.max(0, Math.min(1, (t - 45) / 170));
       if (k > 0) {
         const e = 1 - Math.pow(1 - k, 2);
-        G.t.setAttribute("transform", `${G.base} translate(${(G.dx * e).toFixed(1)},${(G.dy * e).toFixed(1)}) rotate(${(G.rot * e).toFixed(1)}) scale(${1 + (G.sc - 1) * e})`);
-        G.t.style.opacity = (G.ghost ? 0.55 : 1) * (1 - k);
+        if (G.svg) G.el.setAttribute("transform", `${G.base} translate(${(G.dx * e).toFixed(1)},${(G.dy * e).toFixed(1)}) rotate(${(G.rot * e).toFixed(1)}) scale(${1 + (G.sc - 1) * e})`);
+        else G.el.style.transform = `translate(${(G.dx * e).toFixed(1)}px,${(G.dy * e).toFixed(1)}px) rotate(${(G.rot * e).toFixed(1)}deg) scale(${1 + (G.sc - 1) * e})`;
+        G.el.style.opacity = (G.ghost ? 0.55 : 1) * (1 - k);
       }
     });
     ITEMS.forEach((it) => (it.tagEl.style.opacity = t > 35 ? 0 : 1));
     // ---- splash breaking into chunks (0-95 ms) ----
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    if (t < 95) {
+    if (fromPage && !opened) {
+      // the title splash breaks into the same horizontal chunks
+      pImg.style.webkitMaskImage = pImg.style.maskImage = t < 95 ? `url(${chipKeepURL(Math.min(1, t / 85))})` : "";
+      pImg.style.webkitMaskSize = pImg.style.maskSize = "100% 100%";
+      pImg.style.opacity = t < 95 ? 1 : 0;
+    }
+    if (splashSnap && t < 95) {
       ctx.globalCompositeOperation = "source-over";
       ctx.drawImage(splashSnap, 0, 0);
       ctx.globalCompositeOperation = "destination-out";
@@ -816,7 +857,8 @@ function goTo(id) {
     }
     // ---- name plate / hints streak away, lines and character fade ----
     const pk = Math.min(1, t / 90);
-    [plate, hints].forEach((el) => {
+    if (!opened) streakEls.forEach((el) => {
+      el.style.transformOrigin = "0 50%";
       el.style.transform = `translateX(${-30 * pk}px) scaleX(${1 + 0.8 * pk}) skewX(-20deg)`;
       el.style.filter = `brightness(${1 + 3 * pk}) blur(${2 * pk}px)`;
       el.style.opacity = 1 - pk;
@@ -851,6 +893,10 @@ function goTo(id) {
         opened = true;
         document.body.classList.add("wiping");
         hero.style.opacity = 0;
+        if (fromPage) {
+          streakEls.forEach((el) => { el.style.transform = el.style.filter = el.style.opacity = el.style.transformOrigin = ""; });
+          pImg.style.webkitMaskImage = pImg.style.maskImage = ""; pImg.style.opacity = "";
+        }
         location.hash = `#/${id}`;                  // the new page is now underneath
       }
       const slant = VH * 0.53;                       // the band leans like the reference: x shifts by this from bottom to top
@@ -882,8 +928,8 @@ function goTo(id) {
     // ---- finish ----
     fxc.setTransform(1, 0, 0, 1, 0, 0);
     fxc.clearRect(0, 0, fx.width, fx.height);
-    glyphs.forEach((G) => { G.t.setAttribute("transform", G.base); G.t.style.opacity = ""; });
-    [plate, hints].forEach((el) => { el.style.transform = el.style.filter = el.style.opacity = ""; });
+    if (!fromPage) glyphs.forEach((G) => { G.el.setAttribute("transform", G.base); G.el.style.opacity = ""; });
+    streakEls.forEach((el) => { el.style.transform = el.style.filter = el.style.opacity = el.style.transformOrigin = ""; });
     linesEl.style.opacity = "";
     hero.style.transition = "opacity .35s ease";
     hero.style.filter = "";
