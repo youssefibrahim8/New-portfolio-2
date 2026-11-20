@@ -1,11 +1,11 @@
 /* =========================================================
-   PORTFOLIO CONTENT — edit everything in this block
+   PORTFOLIO CONTENT: edit everything in this block
    ========================================================= */
 const PROFILE = {
-  name: "Your Name",
-  role: "Creative Developer",
-  email: "hello@example.com",
-  location: "Your City, Country",
+  name: "Youssef Ibrahim",
+  role: "CS at Carleton University",
+  email: "your.email@example.com",
+  location: "Ottawa, Canada",
   github: "https://github.com/youssefibrahim8",
   linkedin: "https://www.linkedin.com/in/your-handle",
   resume: "assets/resume.pdf",
@@ -15,85 +15,76 @@ const SECTIONS = [
   {
     id: "profile", label: "Profile", tag: "About me", sub: "Who I am",
     html: () => `
-      <p class="lead">Hi, I'm ${PROFILE.name}: a ${PROFILE.role.toLowerCase()} who builds bold, expressive interfaces and the systems behind them.</p>
-      <p>I like work where design and engineering meet: interfaces with personality, smooth motion and solid code. This section is a short intro. Replace it with your own story, what drives you and what you're looking for next.</p>
+      <p class="lead">Hi, I'm ${PROFILE.name}, a Computer Science student at Carleton University who loves building bold, expressive software.</p>
+      <p>I enjoy work where design and engineering meet: interfaces with personality, smooth motion and solid code underneath. Replace this paragraph with your own story, what drives you and what you're looking for next.</p>
       <h2>Status</h2>
-      <div class="stat"><span class="k">Class</span><span class="v">${PROFILE.role}</span></div>
+      <div class="stat"><span class="k">Class</span><span class="v">Computer Science</span></div>
+      <div class="stat"><span class="k">Guild</span><span class="v">Carleton University</span></div>
       <div class="stat"><span class="k">Base</span><span class="v">${PROFILE.location}</span></div>
-      <div class="stat"><span class="k">Party</span><span class="v">Open to new opportunities</span></div>
-      <div class="stat"><span class="k">Lang</span><span class="v">English · Arabic</span></div>`,
+      <div class="stat"><span class="k">Party</span><span class="v">Open to internships</span></div>`,
   },
   {
     id: "skills", label: "Skills", tag: "Abilities", sub: "What I can do",
     html: () => `
       <h2>Core</h2>
       <div class="meters">
-        ${meter("HTML / CSS", 95)}
-        ${meter("JavaScript / TypeScript", 88)}
-        ${meter("React / Next.js", 82)}
-        ${meter("Node.js", 74)}
-        ${meter("UI / Motion design", 80)}
+        ${meter("Java", 85)}
+        ${meter("Python", 85)}
+        ${meter("C / C++", 70)}
+        ${meter("HTML / CSS / JavaScript", 88)}
+        ${meter("SQL", 70)}
       </div>
       <h2>Toolkit</h2>
-      <ul class="chips">${["Git", "Figma", "Vite", "Tailwind", "Python", "SQL", "Firebase", "Three.js", "GSAP", "Linux"].map((t) => `<li>${t}</li>`).join("")}</ul>
+      <ul class="chips">${["Git", "GitHub", "Linux", "VS Code", "IntelliJ", "Figma", "React", "Node.js"].map((t) => `<li>${t}</li>`).join("")}</ul>
       <h2>Soft skills</h2>
-      <ul class="chips">${["Communication", "Problem solving", "Team leadership", "Fast learner"].map((t) => `<li>${t}</li>`).join("")}</ul>`,
+      <ul class="chips">${["Communication", "Problem solving", "Teamwork", "Fast learner"].map((t) => `<li>${t}</li>`).join("")}</ul>`,
   },
   {
     id: "experience", label: "Experience", tag: "Work history", sub: "Where I've been",
     html: () => `
       <ol class="timeline">
-        ${job("2024 to Present", "Frontend Developer", "Company Name", "Built and shipped customer-facing features, led a design-system refresh and improved page performance.")}
-        ${job("2022 to 2024", "Junior Web Developer", "Studio Name", "Built responsive marketing sites and interactive landing pages for clients across several industries.")}
-        ${job("2021", "Freelance", "Self-employed", "Designed and developed websites for small businesses and local creators.")}
+        ${job("20XX to Present", "Role Title", "Company Name", "Describe what you built, the tools you used and the impact it had.")}
+        ${job("20XX", "Role Title", "Organisation", "Another position, volunteer role or club leadership position.")}
+        ${job("20XX", "Freelance", "Self-employed", "Websites or apps built for clients, friends or local businesses.")}
       </ol>`,
   },
   {
     id: "projects", label: "Projects", tag: "My work", sub: "Things I've built",
     html: () => `
       <div class="cards">
-        ${project(1, "Command Menu Portfolio", "This site: an RPG-style command menu with paint splatter hovers and an animated hero.", ["HTML", "CSS", "JS"], PROFILE.github)}
-        ${project(2, "Project Two", "A short, punchy description of what it does and the problem it solves.", ["React", "Node"], "#")}
-        ${project(3, "Project Three", "Highlight the most interesting technical challenge or result here.", ["TypeScript", "API"], "#")}
-        ${project(4, "Project Four", "Another project worth showing off, ideally with a live demo link.", ["Python", "Data"], "#")}
+        ${project(1, "Command Menu Portfolio", "This site: an RPG-style command menu with paint splatter hovers and a floating character.", ["HTML", "CSS", "JS"], PROFILE.github + "/New-portfolio-2")}
+        ${project(2, "Project Two", "A short, punchy description of what it does and the problem it solves.", ["Java"], "#")}
+        ${project(3, "Project Three", "Highlight the most interesting technical challenge or result here.", ["Python"], "#")}
+        ${project(4, "Project Four", "Another project worth showing off, ideally with a live demo link.", ["C++"], "#")}
       </div>`,
   },
   {
     id: "education", label: "Education", tag: "Studies", sub: "Where I learned",
     html: () => `
       <ol class="timeline">
-        ${job("2020 to 2024", "B.Sc. Computer Science", "University Name", "Focus on software engineering and human-computer interaction.")}
-        ${job("2023", "Certification", "Online Platform", "Advanced front-end development and accessibility.")}
+        ${job("20XX to Present", "Bachelor of Computer Science", "Carleton University, Ottawa", "Relevant coursework: data structures, algorithms, systems programming, object-oriented design.")}
+        ${job("20XX", "High School Diploma", "School Name", "Add awards, honours or clubs here.")}
       </ol>`,
   },
   {
     id: "hobbies", label: "Hobbies", tag: "Off duty", sub: "When I'm not coding",
     html: () => `
-      <p>The things that keep me inspired outside of work:</p>
+      <p>The things that keep me inspired outside of class:</p>
       <div class="cards">
         ${hobby("Gaming", "Especially stylish RPGs. Their menus inspired this site.")}
-        ${hobby("Drawing", "Sketching characters and experimenting with digital painting.")}
-        ${hobby("Music", "Building playlists, and the occasional attempt at producing.")}
+        ${hobby("Drawing", "Sketching characters and experimenting with digital art.")}
+        ${hobby("Music", "Building playlists and discovering new artists.")}
         ${hobby("Fitness", "Training to keep the mind as sharp as the body.")}
       </div>`,
-  },
-  {
-    id: "awards", label: "Awards", tag: "Achievements", sub: "Milestones",
-    html: () => `
-      <ol class="timeline">
-        ${job("2024", "Hackathon Winner", "Event Name", "First place out of 40 teams with a real-time collaboration app.")}
-        ${job("2023", "Dean's List", "University Name", "Recognised for academic excellence.")}
-        ${job("2022", "Open Source Contributor", "Project Name", "Merged contributions to a popular open-source library.")}
-      </ol>`,
   },
   {
     id: "contact", label: "Contact", tag: "Get in touch", sub: "Send a message",
     html: () => `
       <p class="lead">Have a project, a role or just want to say hi? My inbox is open.</p>
       <ul class="contact-list">
-        <li><div class="stat"><span class="k">Email</span><span class="v"><a href="mailto:${PROFILE.email}" style="color:inherit">${PROFILE.email}</a></span></div></li>
-        <li><div class="stat"><span class="k">GitHub</span><span class="v"><a href="${PROFILE.github}" target="_blank" rel="noopener" style="color:inherit">${PROFILE.github.replace(/^https?:\/\//, "")}</a></span></div></li>
-        <li><div class="stat"><span class="k">LinkedIn</span><span class="v"><a href="${PROFILE.linkedin}" target="_blank" rel="noopener" style="color:inherit">LinkedIn profile</a></span></div></li>
+        <li><div class="stat"><span class="k">Email</span><span class="v"><a href="mailto:${PROFILE.email}">${PROFILE.email}</a></span></div></li>
+        <li><div class="stat"><span class="k">GitHub</span><span class="v"><a href="${PROFILE.github}" target="_blank" rel="noopener">${PROFILE.github.replace(/^https?:\/\//, "")}</a></span></div></li>
+        <li><div class="stat"><span class="k">LinkedIn</span><span class="v"><a href="${PROFILE.linkedin}" target="_blank" rel="noopener">LinkedIn profile</a></span></div></li>
       </ul>
       <form class="form" id="contact-form">
         <label>Name<input name="name" required autocomplete="name" /></label>
@@ -111,22 +102,24 @@ const SECTIONS = [
   },
 ];
 
-/* Menu layout in a 1280×720 design frame. The fan of rotated, stacked words follows the reference.
-   x, y = top-left of the word, fs = font size, r = rotation (deg). */
-const LAYOUT = [
-  { x: 222, y: 22,  fs: 122, r: 12 },
-  { x: 232, y: 168, fs: 138, r: 4 },
-  { x: 96,  y: 276, fs: 112, r: 0 },
-  { x: 156, y: 364, fs: 120, r: -4 },
-  { x: 92,  y: 532, fs: 104, r: -13 },
-  { x: 344, y: 572, fs: 72,  r: -17 },
-  { x: 296, y: 694, fs: 94,  r: -27 },
-  { x: 530, y: 684, fs: 76,  r: -46 },
-  { x: 654, y: 690, fs: 60,  r: -62 },
+/* Menu slots, measured from the reference menu (1280×720 frame).
+   Each slot copies the baseline, angle, length and letter heights of one word in the reference:
+   SKILL, ITEM, EQUIPMENT, PARTY, FOLLOWER, QUEST, CALENDAR, JOURNAL (SYSTEM dropped).
+   p0 = baseline start, a = angle (deg), len = word length, cap = first-letter height, sc = small-cap height.
+   CALENDAR curves in the reference, so it uses a quadratic curve instead. */
+const SLOTS = [
+  { p0: [214, 92],  a: 24,    len: 345, cap: 118, sc: 74 },
+  { p0: [233, 268], a: 3,     len: 282, cap: 122, sc: 66 },
+  { p0: [40, 360],  a: -1,    len: 532, cap: 123, sc: 74, innerCap: 6 },
+  { p0: [160, 480], a: -8.5,  len: 435, cap: 120, sc: 68 },
+  { p0: [45, 678],  a: -21.5, len: 588, cap: 132, sc: 72 },
+  { p0: [302, 662], a: -28,   len: 322, cap: 100, sc: 58 },
+  { curve: [[40, 785], [340, 770], [640, 540]], cap: 122, sc: 62 },
+  { p0: [496, 718], a: -40,   len: 268, cap: 88,  sc: 54 },
 ];
 
 /* =========================================================
-   Helpers for content
+   Content helpers
    ========================================================= */
 function meter(name, v) {
   return `<div class="meter"><div class="row"><span>${name}</span><span>${v}</span></div><div class="bar"><div class="fill" style="--w:${v}%"></div></div></div>`;
@@ -144,8 +137,11 @@ function hobby(title, text) {
 }
 
 /* =========================================================
-   Seeded random + paint splatter generator
+   Geometry helpers
    ========================================================= */
+const NS = "http://www.w3.org/2000/svg";
+const rad = (d) => (d * Math.PI) / 180;
+
 function rng(seed) {
   return function () {
     seed |= 0; seed = (seed + 0x6d2b79f5) | 0;
@@ -155,157 +151,255 @@ function rng(seed) {
   };
 }
 
-function smoothPath(pts) {
-  const n = pts.length;
-  let d = `M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)}`;
-  for (let i = 0; i < n; i++) {
-    const p0 = pts[(i - 1 + n) % n], p1 = pts[i], p2 = pts[(i + 1) % n], p3 = pts[(i + 2) % n];
-    const c1x = p1[0] + (p2[0] - p0[0]) / 6, c1y = p1[1] + (p2[1] - p0[1]) / 6;
-    const c2x = p2[0] - (p3[0] - p1[0]) / 6, c2y = p2[1] - (p3[1] - p1[1]) / 6;
-    d += ` C${c1x.toFixed(1)},${c1y.toFixed(1)} ${c2x.toFixed(1)},${c2y.toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`;
-  }
-  return d + "Z";
-}
-
-function blob(R, cx, cy, rx, ry, rough, spikes) {
-  const N = 72, ph = [R() * 6.28, R() * 6.28, R() * 6.28, R() * 6.28];
-  const spk = Array.from({ length: spikes }, () => ({ a: R() * Math.PI * 2, h: 0.25 + R() * 0.6, w: 0.05 + R() * 0.08 }));
+// Sample a slot's baseline into points with cumulative length and unit tangent.
+function sampleSlot(slot, n = 80) {
   const pts = [];
-  for (let i = 0; i < N; i++) {
-    const a = (i / N) * Math.PI * 2;
-    let k = 1 + rough * (0.5 * Math.sin(2 * a + ph[0]) + 0.35 * Math.sin(5 * a + ph[1]) + 0.22 * Math.sin(9 * a + ph[2]) + 0.12 * Math.sin(17 * a + ph[3]));
-    for (const s of spk) {
-      let da = Math.abs(((a - s.a + Math.PI * 3) % (Math.PI * 2)) - Math.PI);
-      k += s.h * Math.exp(-(da * da) / (2 * s.w * s.w));
+  if (slot.curve) {
+    const [a, b, c] = slot.curve;
+    for (let i = 0; i <= n; i++) {
+      const t = i / n, u = 1 - t;
+      const x = u * u * a[0] + 2 * u * t * b[0] + t * t * c[0];
+      const y = u * u * a[1] + 2 * u * t * b[1] + t * t * c[1];
+      const tx = 2 * u * (b[0] - a[0]) + 2 * t * (c[0] - b[0]);
+      const ty = 2 * u * (b[1] - a[1]) + 2 * t * (c[1] - b[1]);
+      const l = Math.hypot(tx, ty);
+      pts.push({ x, y, tx: tx / l, ty: ty / l });
     }
-    pts.push([cx + Math.cos(a) * rx * k, cy + Math.sin(a) * ry * k]);
+  } else {
+    const tx = Math.cos(rad(slot.a)), ty = Math.sin(rad(slot.a));
+    for (let i = 0; i <= n; i++) {
+      const s = (slot.len * i) / n;
+      pts.push({ x: slot.p0[0] + tx * s, y: slot.p0[1] + ty * s, tx, ty });
+    }
   }
-  return smoothPath(pts);
-}
-
-function paintSplat(svg, seed) {
-  const R = rng(seed * 9973 + 17);
-  const NS = "http://www.w3.org/2000/svg";
-  svg.setAttribute("viewBox", "0 0 300 160");
-  svg.setAttribute("preserveAspectRatio", "none");
-  let out = `<g filter="url(#splatRough)">`;
-  out += `<path d="${blob(R, 150, 80, 112, 46, 0.22, 7)}" fill="#b330d4"/>`;
-  out += `<path d="${blob(R, 135 + R() * 30, 76 + R() * 8, 70, 26, 0.3, 3)}" fill="#9d22c2" opacity=".75"/>`;
-  out += `<path d="${blob(R, 120 + R() * 60, 70 + R() * 20, 34, 12, 0.35, 2)}" fill="#c75ae6" opacity=".55"/>`;
-  // drips & droplets
-  for (let i = 0; i < 16; i++) {
-    const a = R() * Math.PI * 2, d = 1.12 + R() * 0.7;
-    const x = 150 + Math.cos(a) * 112 * d, y = 80 + Math.sin(a) * 50 * d;
-    const r = 1 + R() * (i < 4 ? 7 : 3.5);
-    out += `<ellipse cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" rx="${(r * 1.5).toFixed(1)}" ry="${r.toFixed(1)}" fill="#b330d4"/>`;
-  }
-  for (let i = 0; i < 4; i++) {
-    const a = R() * Math.PI * 2, len = 20 + R() * 40;
-    const x1 = 150 + Math.cos(a) * 100, y1 = 80 + Math.sin(a) * 40;
-    const x2 = x1 + Math.cos(a) * len, y2 = y1 + Math.sin(a) * len * 0.45;
-    out += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="#b330d4" stroke-width="${(1.5 + R() * 3).toFixed(1)}" stroke-linecap="round"/>`;
-  }
-  out += `</g>`;
-  svg.innerHTML = out;
-  void NS;
-}
-
-// Shared SVG filter giving the splatter ragged, paint-like edges.
-document.body.insertAdjacentHTML(
-  "beforeend",
-  `<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
-     <filter id="splatRough" x="-20%" y="-30%" width="140%" height="160%">
-       <feTurbulence type="fractalNoise" baseFrequency="0.045" numOctaves="3" seed="8" result="n"/>
-       <feDisplacementMap in="SourceGraphic" in2="n" scale="12" xChannelSelector="R" yChannelSelector="G"/>
-     </filter></defs></svg>`
-);
-
-/* =========================================================
-   Letter jitter — the hand-set, uneven look of the menu type
-   ========================================================= */
-function jitterWord(el, text, seed) {
-  const R = rng(seed);
-  el.innerHTML = "";
-  [...text].forEach((c, i) => {
-    const s = document.createElement("span");
-    s.className = "ch" + (i === 0 ? " cap" : "");
-    // Occasionally render an inner letter as a full capital, like "EquipMent".
-    if (i > 2 && i < text.length - 1 && R() < 0.1) s.classList.add("cap");
-    s.textContent = i === 0 ? c.toUpperCase() : c.toLowerCase();
-    s.style.setProperty("--cy", ((R() - 0.5) * 0.09).toFixed(3) + "em");
-    s.style.setProperty("--cr", ((R() - 0.5) * 9).toFixed(1) + "deg");
-    s.style.setProperty("--cs", (0.94 + R() * 0.12).toFixed(3));
-    el.appendChild(s);
+  let acc = 0;
+  pts.forEach((p, i) => {
+    if (i) acc += Math.hypot(p.x - pts[i - 1].x, p.y - pts[i - 1].y);
+    p.s = acc;
   });
+  return { pts, len: acc };
+}
+
+// Point (and tangent) at arc length s along a sampled baseline.
+function pointAt(geo, s) {
+  const pts = geo.pts;
+  let k = 1;
+  while (k < pts.length - 1 && pts[k].s < s) k++;
+  const a = pts[k - 1], b = pts[k];
+  const t = b.s > a.s ? Math.max(0, Math.min(1, (s - a.s) / (b.s - a.s))) : 0;
+  return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t, tx: a.tx + (b.tx - a.tx) * t, ty: a.ty + (b.ty - a.ty) * t };
+}
+
+function pathD(pts) {
+  return pts.map((p, i) => `${i ? "L" : "M"}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
 }
 
 /* =========================================================
-   Build menu
+   Build the menu
    ========================================================= */
-const menu = document.getElementById("menu");
-const items = SECTIONS.map((sec, i) => {
-  const L = LAYOUT[i] || LAYOUT[LAYOUT.length - 1];
-  const a = document.createElement("a");
-  a.className = "item";
-  a.href = `#/${sec.id}`;
-  a.dataset.index = i;
-  a.style.cssText = `--x:${L.x}px;--y:${L.y}px;--fs:${L.fs}px;--r:${L.r}deg`;
-  a.setAttribute("aria-label", sec.label);
-  const splat = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-  splat.classList.add("splat");
-  splat.setAttribute("aria-hidden", "true");
-  paintSplat(splat, i + 1);
-  const word = document.createElement("span");
-  word.className = "word";
-  jitterWord(word, sec.label, (i + 3) * 131);
-  const tag = document.createElement("span");
-  tag.className = "tag";
-  tag.textContent = sec.tag;
-  a.append(splat, word, tag);
-  menu.appendChild(a);
-  return a;
-});
+const words = document.getElementById("words");
+const splats = document.getElementById("splats");
+words.setAttribute("viewBox", "0 0 760 720");
+splats.setAttribute("viewBox", "0 0 760 720");
+
+let ITEMS = []; // { el, splat, geo, slot, capLen }
+
+function fontRatios() {
+  const c = document.createElement("canvas").getContext("2d");
+  c.font = '900 200px "Playfair Display SC"';
+  const cap = c.measureText("P").actualBoundingBoxAscent / 200;
+  const sc = c.measureText("x").actualBoundingBoxAscent / 200;
+  return { cap: cap || 0.71, sc: sc || 0.56, ctx: c };
+}
+
+// A rough brush-swipe polygon around a baseline. The SVG filter turns its edges into grungy paint.
+function splatPolygon(geo, slot, seed) {
+  const R = rng(seed);
+  const { pts } = geo;
+  const top = [], bot = [];
+  const ext0 = slot.cap * 1.9, ext1 = slot.cap * 0.95;
+  const first = pts[0], last = pts[pts.length - 1];
+  const N = 14;
+  for (let i = -3; i <= N + 3; i++) {
+    let x, y, p;
+    if (i < 0) { p = first; const k = (i / 3) * ext0; x = first.x + first.tx * k; y = first.y + first.ty * k; }
+    else if (i > N) { p = last; const k = ((i - N) / 3) * ext1; x = last.x + last.tx * k; y = last.y + last.ty * k; }
+    else { p = pts[Math.round((i / N) * (pts.length - 1))]; x = p.x; y = p.y; }
+    const ux = p.ty, uy = -p.tx; // toward the tops of the letters
+    const hT = slot.cap * (1.75 + (R() - 0.5) * 0.5);
+    const hB = slot.cap * (0.85 + (R() - 0.5) * 0.4);
+    top.push([x + ux * hT, y + uy * hT]);
+    bot.push([x - ux * hB, y - uy * hB]);
+  }
+  const all = top.concat(bot.reverse());
+  return "M" + all.map((q) => q[0].toFixed(1) + "," + q[1].toFixed(1)).join(" L") + "Z";
+}
+
+function buildMenu() {
+  const F = fontRatios();
+  words.innerHTML = `<defs>${SECTIONS.map((_, i) => `<path id="bp${i}" />`).join("")}</defs>`;
+  splats.querySelectorAll(".splat").forEach((n) => n.remove());
+  ITEMS = SECTIONS.map((sec, i) => {
+    const slot = SLOTS[i];
+    const geo = sampleSlot(slot);
+    words.querySelector(`#bp${i}`).setAttribute("d", pathD(geo.pts));
+
+    const capFs = slot.cap / F.cap;
+    const scFs = slot.sc / F.sc;
+    const R = rng((i + 5) * 977);
+
+    // Natural widths, used to find where the big first letter ends (for hit testing).
+    F.ctx.font = `900 ${capFs}px "Playfair Display SC"`;
+    const wCap = F.ctx.measureText(sec.label[0]).width;
+    F.ctx.font = `900 ${scFs}px "Playfair Display SC"`;
+    const wRest = F.ctx.measureText(sec.label.slice(1).toLowerCase()).width;
+    const capLen = geo.len * (wCap / (wCap + wRest));
+
+    // Letters: big first capital, small caps for the rest. Each glyph is placed on the baseline
+    // individually and squeezed horizontally so the word spans exactly the reference length.
+    const letters = [...sec.label].map((ch, k) => {
+      const isCap = k === 0 || slot.innerCap === k;
+      const fs = k === 0 ? capFs : isCap ? capFs * 0.82 : scFs * (0.97 + R() * 0.06);
+      const glyph = isCap ? ch.toUpperCase() : ch.toLowerCase();
+      F.ctx.font = `900 ${fs}px "Playfair Display SC"`;
+      return { glyph, fs, adv: F.ctx.measureText(glyph).width, off: k ? (R() - 0.5) * slot.sc * 0.06 : 0, rot: k ? (R() - 0.5) * 3 : 0 };
+    });
+    const natural = letters.reduce((a, l) => a + l.adv, 0);
+    const kx = geo.len / natural;
+    let sAcc = 0, spans = "";
+    letters.forEach((l) => {
+      const p = pointAt(geo, sAcc * kx);
+      const ang = (Math.atan2(p.ty, p.tx) * 180) / Math.PI + l.rot;
+      const x = p.x + p.ty * l.off * -1, y = p.y - p.tx * l.off * -1;
+      spans += `<text font-size="${l.fs.toFixed(1)}" transform="translate(${x.toFixed(1)},${y.toFixed(1)}) rotate(${ang.toFixed(2)}) scale(${kx.toFixed(3)},1)">${l.glyph}</text>`;
+      sAcc += l.adv;
+    });
+
+    const g = document.createElementNS(NS, "g");
+    g.setAttribute("class", "word");
+    const end = geo.pts[geo.pts.length - 1];
+    const endAng = (Math.atan2(end.ty, end.tx) * 180) / Math.PI;
+    const tagW = sec.tag.length * 9.2 + 26;
+    const tagX = -tagW * 0.35;
+    const ty0 = slot.sc * 0.18;
+    g.innerHTML = `
+      <a href="#/${sec.id}" aria-label="${sec.label}" data-i="${i}">
+        ${spans}
+      </a>
+      <g class="tag" transform="translate(${end.x.toFixed(1)},${end.y.toFixed(1)}) rotate(${endAng.toFixed(1)})">
+        <line x1="${(tagX - 50).toFixed(0)}" y1="${(ty0 + 30).toFixed(1)}" x2="${(tagX + tagW + 40).toFixed(0)}" y2="${(ty0 + 30).toFixed(1)}" />
+        <rect x="${tagX.toFixed(0)}" y="${ty0.toFixed(1)}" width="${tagW.toFixed(0)}" height="27" />
+        <text x="${(tagX + 13).toFixed(0)}" y="${(ty0 + 19.5).toFixed(1)}">${sec.tag}</text>
+      </g>`;
+    words.appendChild(g);
+
+    const sp = document.createElementNS(NS, "g");
+    sp.setAttribute("class", "splat");
+    sp.innerHTML = `<path d="${splatPolygon(geo, slot, i + 11)}" fill="#000" filter="url(#paint)" />`;
+    splats.appendChild(sp);
+
+    g.querySelector("a").addEventListener("focus", () => setActive(i));
+    return { el: g, splat: sp, geo, slot, capLen };
+  });
+  setActive(active);
+}
+
+/* =========================================================
+   Hit testing: each point belongs to at most ONE word.
+   A point is inside a word if it lies within that word's letter band,
+   measured along its own baseline. Where two bands touch, the word whose
+   centre line is nearest wins, so hitboxes never overlap.
+   ========================================================= */
+function hitTest(x, y) {
+  let best = -1, bestScore = Infinity;
+  ITEMS.forEach((it, i) => {
+    const { pts, len } = it.geo;
+    let bd = Infinity, bp = null, bs = 0;
+    for (let k = 0; k < pts.length - 1; k++) {
+      const a = pts[k], b = pts[k + 1];
+      const vx = b.x - a.x, vy = b.y - a.y, L2 = vx * vx + vy * vy;
+      const t = ((x - a.x) * vx + (y - a.y) * vy) / L2;
+      const tc = Math.max(0, Math.min(1, t));
+      const d = Math.hypot(x - (a.x + vx * tc), y - (a.y + vy * tc));
+      if (d < bd) { bd = d; bp = a; bs = a.s + Math.sqrt(L2) * t; }
+    }
+    if (bs < -4 || bs > len + 4) return;
+    const bx = bp.x + bp.tx * (bs - bp.s), by = bp.y + bp.ty * (bs - bp.s);
+    const h = (x - bx) * bp.ty - (y - by) * bp.tx; // height above the baseline
+    const topH = bs < it.capLen ? it.slot.cap : it.slot.sc * 1.04;
+    if (h < -it.slot.sc * 0.14 || h > topH) return;
+    const score = Math.abs(h - it.slot.sc / 2) / it.slot.sc;
+    if (score < bestScore) { bestScore = score; best = i; }
+  });
+  return best;
+}
 
 let active = 0;
 function setActive(i) {
-  active = (i + items.length) % items.length;
-  items.forEach((el, j) => el.classList.toggle("active", j === active));
+  active = (i + SECTIONS.length) % SECTIONS.length;
+  ITEMS.forEach((it, j) => {
+    it.el.classList.toggle("active", j === active);
+    it.splat.classList.toggle("on", j === active);
+  });
 }
-setActive(0);
 
-items.forEach((el, i) => {
-  el.addEventListener("mouseenter", () => !document.body.classList.contains("open") && setActive(i));
-  el.addEventListener("focus", () => setActive(i));
+const root = document.documentElement;
+let MS = 1, MX = 0, MY = 0;
+const isOpen = () => document.body.classList.contains("open");
+const toMenu = (e) => [(e.clientX - MX) / MS, (e.clientY - MY) / MS];
+
+window.addEventListener("pointermove", (e) => {
+  if (isOpen() || !ITEMS.length) return;
+  const i = hitTest(...toMenu(e));
+  document.body.classList.toggle("hovering", i >= 0);
+  if (i >= 0 && i !== active) setActive(i);
+});
+window.addEventListener("click", (e) => {
+  if (isOpen() || !ITEMS.length) return;
+  if (e.target.closest(".nameplate, .hints")) return;
+  const i = hitTest(...toMenu(e));
+  if (i >= 0) { e.preventDefault(); location.hash = `#/${SECTIONS[i].id}`; }
 });
 
-document.querySelectorAll('[data-bind="name"]').forEach((n) => (n.textContent = PROFILE.name));
-document.querySelectorAll('[data-bind="role"]').forEach((n) => (n.textContent = PROFILE.role));
-document.title = `${PROFILE.name} | Portfolio`;
-
 /* =========================================================
-   Panel (section view) + hash routing
+   Panel + hash routing + Q / E switching
    ========================================================= */
 const panel = document.getElementById("panel");
 const pTitle = document.getElementById("panel-title");
 const pSub = document.getElementById("panel-sub");
 const pBody = document.getElementById("panel-body");
 const pSplat = panel.querySelector(".panel-splat");
+const dots = document.getElementById("tab-dots");
+let current = -1;
+
+pSplat.innerHTML = `<svg viewBox="0 0 400 200" preserveAspectRatio="none"><path d="M30,60 L110,40 L200,48 L300,30 L380,52 L392,120 L340,160 L220,150 L120,172 L20,150 L6,100Z" fill="#000" filter="url(#paint)"/></svg>`;
+dots.innerHTML = SECTIONS.map((s, i) => `<button type="button" aria-label="${s.label}" data-i="${i}"></button>`).join("");
+dots.addEventListener("click", (e) => {
+  const b = e.target.closest("button");
+  if (b) location.hash = `#/${SECTIONS[+b.dataset.i].id}`;
+});
 
 function openSection(id) {
   const i = SECTIONS.findIndex((s) => s.id === id);
   if (i < 0) return closeSection(false);
   const sec = SECTIONS[i];
+  const back = current >= 0 && (i - current + SECTIONS.length) % SECTIONS.length > SECTIONS.length / 2;
+  current = i;
   setActive(i);
-  jitterWord(pTitle, sec.label, (i + 3) * 131);
-  paintSplat(pSplat, i + 40);
+  pTitle.innerHTML = `<span class="cap">${sec.label[0]}</span>${sec.label.slice(1).toLowerCase()}`;
   pSub.textContent = sec.sub;
+  pBody.className = "panel-body";
+  void pBody.offsetWidth; // restart the slide animation
+  pBody.className = "panel-body" + (back ? " from-left" : "");
   pBody.innerHTML = sec.html();
   pBody.scrollTop = 0;
-  document.body.classList.remove("open");
-  void panel.offsetWidth; // restart the open transitions
+  document.getElementById("prev-label").textContent = SECTIONS[(i - 1 + SECTIONS.length) % SECTIONS.length].label;
+  document.getElementById("next-label").textContent = SECTIONS[(i + 1) % SECTIONS.length].label;
+  dots.querySelectorAll("button").forEach((b, j) => b.classList.toggle("on", j === i));
   document.body.classList.add("open");
+  document.body.classList.remove("hovering");
   panel.setAttribute("aria-hidden", "false");
-  setTimeout(() => pBody.focus({ preventScroll: true }), 50);
+  setTimeout(() => pBody.focus({ preventScroll: true }), 30);
   const form = document.getElementById("contact-form");
   if (form) form.addEventListener("submit", (e) => {
     e.preventDefault();
@@ -318,8 +412,16 @@ function openSection(id) {
 function closeSection(updateHash = true) {
   document.body.classList.remove("open");
   panel.setAttribute("aria-hidden", "true");
+  current = -1;
   if (updateHash && location.hash) history.pushState("", document.title, location.pathname + location.search);
-  items[active] && items[active].focus({ preventScroll: true });
+}
+
+// Q / E: previous / next section (inside a page), or move the menu selection.
+function step(d) {
+  const base = isOpen() ? current : active;
+  const i = (base + d + SECTIONS.length) % SECTIONS.length;
+  if (isOpen()) location.hash = `#/${SECTIONS[i].id}`;
+  else setActive(i);
 }
 
 function route() {
@@ -328,61 +430,65 @@ function route() {
 }
 window.addEventListener("hashchange", route);
 document.getElementById("back").addEventListener("click", () => closeSection());
+document.getElementById("prev").addEventListener("click", () => step(-1));
+document.getElementById("next").addEventListener("click", () => step(1));
 
 document.addEventListener("keydown", (e) => {
-  const open = document.body.classList.contains("open");
-  if (e.key === "Escape" && open) { e.preventDefault(); closeSection(); return; }
-  if (open) return;
-  if (e.key === "ArrowDown" || e.key === "ArrowRight") { e.preventDefault(); setActive(active + 1); items[active].focus(); }
-  else if (e.key === "ArrowUp" || e.key === "ArrowLeft") { e.preventDefault(); setActive(active - 1); items[active].focus(); }
-  else if (e.key === "Enter" && document.activeElement && !document.activeElement.classList.contains("item")) {
-    location.hash = `#/${SECTIONS[active].id}`;
-  }
+  const tag = (e.target.tagName || "").toLowerCase();
+  if (tag === "input" || tag === "textarea" || e.ctrlKey || e.metaKey || e.altKey) return;
+  const k = e.key.toLowerCase();
+  if (k === "q") { e.preventDefault(); step(-1); return; }
+  if (k === "e") { e.preventDefault(); step(1); return; }
+  if (e.key === "Escape" && isOpen()) { e.preventDefault(); closeSection(); return; }
+  if (isOpen()) return;
+  if (e.key === "ArrowDown" || e.key === "ArrowRight") { e.preventDefault(); setActive(active + 1); }
+  else if (e.key === "ArrowUp" || e.key === "ArrowLeft") { e.preventDefault(); setActive(active - 1); }
+  else if (e.key === "Enter") { e.preventDefault(); location.hash = `#/${SECTIONS[active].id}`; }
 });
 
 /* =========================================================
-   Layout: scale the 1280×720 frame to the viewport
+   Layout
    ========================================================= */
-const root = document.documentElement;
 const lines = document.querySelector(".lines");
 
 function layout() {
   const W = window.innerWidth, H = window.innerHeight;
-  let s, ox, oy, hx, hy, hw;
+  let hx, hy, hw, ui;
   if (W >= H * 1.05) {
-    s = Math.min(W / 1280, H / 720);
-    ox = (W - 1280 * s) / 2;
-    oy = (H - 720 * s) / 2;
-    hw = 860 * s;
-    hx = ox + 396 * s;
-    hy = oy + 34 * s;
+    const s = Math.min(W / 1280, H / 720);
+    const ox = (W - 1280 * s) / 2, oy = (H - 720 * s) / 2;
+    MS = s; MX = ox; MY = oy;
+    hw = 970 * s;
+    hx = ox + 430 * s;
+    hy = H + 18 * s - hw * (978 / 1469); // bottom edge stays below the screen while floating
+    ui = Math.max(0.7, s);
   } else {
-    // Portrait: character on top, menu fanned across the bottom.
-    s = Math.min(W / 760, (H * 0.66) / 720);
-    ox = Math.max(0, (W - 760 * s) / 2) - 40 * s;
-    oy = H - 720 * s - 18;
-    hw = Math.max(W * 1.25, H * 0.55);
-    hx = W - hw * 0.98;
-    hy = H * 0.03;
+    MS = Math.min(W / 700, (H * 0.6) / 720);
+    MX = (W - 700 * MS) / 2 - 20 * MS;
+    MY = H - 720 * MS - 6;
+    hw = W * 1.3;
+    hx = W - hw * 0.97;
+    hy = H * 0.05;
+    ui = 0.8;
   }
-  root.style.setProperty("--s", s.toFixed(4));
-  root.style.setProperty("--ox", ox.toFixed(1) + "px");
-  root.style.setProperty("--oy", oy.toFixed(1) + "px");
+  root.style.setProperty("--ms", MS.toFixed(4));
+  root.style.setProperty("--mx", MX.toFixed(1) + "px");
+  root.style.setProperty("--my", MY.toFixed(1) + "px");
+  root.style.setProperty("--ui", ui.toFixed(3));
   root.style.setProperty("--heroW", hw.toFixed(1) + "px");
   root.style.setProperty("--heroX", hx.toFixed(1) + "px");
   root.style.setProperty("--heroY", hy.toFixed(1) + "px");
   drawLines(W, H, hx, hy, hw);
 }
 
-/* Thin, faded white lines (taken from the character artwork's style):
-   giant concentric circles around the head, a long diagonal and a dashed crosshair. */
+/* Thin, faded white lines: giant circles around the head, a long diagonal and a dashed crosshair. */
 function drawLines(W, H, hx, hy, hw) {
-  const hh = hw * (937 / 1239);
-  const cx = hx + hw * 0.33, cy = hy + hh * 0.5;   // centre of the curls
-  const R1 = hw * 0.55, R2 = hw * 0.36, R3 = hw * 0.78;
-  const ex = hx + hw * 0.574, ey = hy + hh * 0.216; // eye
-  const diag = { x1: hx + hw * 0.05, y1: H + 20, x2: W + 20, y2: hy + hh * 0.1 };
-  const hzY = hy + hh * 0.56, vX = Math.min(W - 40, hx + hw * 0.93);
+  const hh = hw * (978 / 1469);
+  const cx = hx + hw * 0.34, cy = hy + hh * 0.53;
+  const R1 = hw * 0.52, R2 = hw * 0.34, R3 = hw * 0.74;
+  const ex = hx + hw * 0.485, ey = hy + hh * 0.241;
+  const diag = { x1: hx + hw * 0.02, y1: H + 20, x2: W + 20, y2: hy + hh * 0.08 };
+  const hzY = hy + hh * 0.5, vX = Math.min(W - 40, hx + hw * 0.92);
   const fade = Math.max(W, H);
   lines.setAttribute("viewBox", `0 0 ${W} ${H}`);
   lines.innerHTML = `
@@ -396,46 +502,27 @@ function drawLines(W, H, hx, hy, hw) {
     </defs>
     <g mask="url(#lineMask)">
       <g class="spin" style="transform-origin:${cx}px ${cy}px">
-        <circle class="l" cx="${cx}" cy="${cy}" r="${R1}" stroke-opacity=".5" stroke-width="1.2"/>
-        <circle class="l" cx="${cx}" cy="${cy}" r="${R1 + 6}" stroke-opacity=".18" stroke-dasharray="2 10"/>
+        <circle class="l" cx="${cx}" cy="${cy}" r="${R1}" stroke-opacity=".45" stroke-width="1.1"/>
+        <circle class="l" cx="${cx}" cy="${cy}" r="${R1 + 6}" stroke-opacity=".16" stroke-dasharray="2 10"/>
       </g>
-      <circle class="l" cx="${cx}" cy="${cy}" r="${R2}" stroke-opacity=".28"/>
+      <circle class="l" cx="${cx}" cy="${cy}" r="${R2}" stroke-opacity=".22"/>
       <g class="spin rev" style="transform-origin:${cx}px ${cy}px">
-        <circle class="l" cx="${cx}" cy="${cy}" r="${R3}" stroke-opacity=".32" stroke-dasharray="${R3 * 2.4} ${R3 * 0.8}"/>
+        <circle class="l" cx="${cx}" cy="${cy}" r="${R3}" stroke-opacity=".28" stroke-dasharray="${R3 * 2.4} ${R3 * 0.8}"/>
       </g>
-      <circle class="l" cx="${ex}" cy="${ey}" r="${hw * 0.26}" stroke-opacity=".22"/>
-      <line class="l" x1="${diag.x1}" y1="${diag.y1}" x2="${diag.x2}" y2="${diag.y2}" stroke-opacity=".55" stroke-width="1.1"/>
-      <line class="l" x1="${diag.x1 + 14}" y1="${diag.y1}" x2="${diag.x2 + 14}" y2="${diag.y2}" stroke-opacity=".16"/>
-      <line class="l" x1="${hx + hw * 0.62}" y1="${hzY}" x2="${W}" y2="${hzY}" stroke-opacity=".45"/>
-      <line class="l" x1="${hx + hw * 0.62}" y1="${hzY + 4}" x2="${W}" y2="${hzY + 4}" stroke-opacity=".3" stroke-dasharray="14 6 2 6"/>
-      <line class="l" x1="${vX}" y1="0" x2="${vX}" y2="${hzY + 30}" stroke-opacity=".38" stroke-dasharray="40 8 4 8"/>
-      <line class="l" x1="${vX - 10}" y1="${hzY}" x2="${vX + 10}" y2="${hzY}" stroke-opacity=".8" stroke-width="1.4"/>
-      <line class="l" x1="${0}" y1="${cy - R1 * 0.2}" x2="${cx - R1}" y2="${cy - R1 * 0.2}" stroke-opacity=".22"/>
+      <circle class="l" cx="${ex}" cy="${ey}" r="${hw * 0.24}" stroke-opacity=".18"/>
+      <line class="l" x1="${diag.x1}" y1="${diag.y1}" x2="${diag.x2}" y2="${diag.y2}" stroke-opacity=".5" stroke-width="1.1"/>
+      <line class="l" x1="${diag.x1 + 14}" y1="${diag.y1}" x2="${diag.x2 + 14}" y2="${diag.y2}" stroke-opacity=".14"/>
+      <line class="l" x1="${hx + hw * 0.6}" y1="${hzY}" x2="${W}" y2="${hzY}" stroke-opacity=".4"/>
+      <line class="l" x1="${hx + hw * 0.6}" y1="${hzY + 4}" x2="${W}" y2="${hzY + 4}" stroke-opacity=".26" stroke-dasharray="14 6 2 6"/>
+      <line class="l" x1="${vX}" y1="${Math.max(120, hy)}" x2="${vX}" y2="${hzY + 30}" stroke-opacity=".34" stroke-dasharray="40 8 4 8"/>
+      <line class="l" x1="${vX - 10}" y1="${hzY}" x2="${vX + 10}" y2="${hzY}" stroke-opacity=".75" stroke-width="1.4"/>
     </g>`;
 }
 
 window.addEventListener("resize", layout);
 layout();
 
-/* =========================================================
-   Eye embers
-   ========================================================= */
-(function embers() {
-  const host = document.querySelector(".embers");
-  const R = rng(99);
-  for (let i = 0; i < 18; i++) {
-    const e = document.createElement("span");
-    e.className = "ember";
-    const ang = -Math.PI / 2 + (R() - 0.3) * 1.8;
-    const dist = 40 + R() * 110;
-    e.style.setProperty("--tx", (Math.cos(ang) * dist).toFixed(0) + "px");
-    e.style.setProperty("--ty", (Math.sin(ang) * dist).toFixed(0) + "px");
-    e.style.setProperty("--d", (2 + R() * 2.5).toFixed(2) + "s");
-    e.style.setProperty("--delay", (-R() * 4).toFixed(2) + "s");
-    const sz = 1.5 + R() * 3;
-    e.style.width = e.style.height = sz + "px";
-    host.appendChild(e);
-  }
-})();
-
-route();
+// Build the menu once the display font is ready (its metrics size every word).
+(document.fonts && document.fonts.load ? document.fonts.load('900 100px "Playfair Display SC"') : Promise.resolve())
+  .catch(() => {})
+  .then(() => { buildMenu(); route(); });
