@@ -203,7 +203,7 @@ body.open .hints { opacity: 0; }
   z-index: 8;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  padding: 25vh 5vw 8vh 3.6vw;
+  padding: 30vh 5vw 7vh 3.6vw;
   pointer-events: none;
   opacity: 0;
   visibility: hidden;
@@ -219,7 +219,7 @@ body.open .panel { pointer-events: auto; opacity: 1; visibility: visible; transi
 .panel-title {
   position: absolute;
   left: -.3vh;
-  bottom: -19.2vh;                 /* baseline sits ~15.5% down the screen; the tops run off the edge */
+  bottom: -23.4vh;                 /* baseline ~19.5% down the screen; only the very tops run off the edge */
   margin: 0;
   font-family: var(--heavy);
   font-weight: 400;
@@ -237,21 +237,24 @@ body.open .panel { pointer-events: auto; opacity: 1; visibility: visible; transi
   filter: drop-shadow(0 .4vh .8vh rgba(0, 0, 0, .35));
 }
 .panel-title .gl { display: inline-block; background: inherit; -webkit-background-clip: text; background-clip: text; }
-.panel-sub {
-  position: absolute;
-  left: 2.3vh;
-  top: 17.6vh;
-  width: 44.5vw;
-  padding: 0 0 .5vh;
-  font-family: var(--display);
-  font-size: max(11px, 1.55vh);
-  letter-spacing: .04em;
-  color: #fff;
-  border-bottom: 1px solid rgba(255, 255, 255, .9);
-  text-shadow: 0 1px 4px rgba(0, 0, 0, .7);
+.panel-title .bl { display: inline-block; width: 0; height: 0; }
+/* solid white rule along the bottom of the word, fading out just past its end */
+.panel-rule {
+  position: fixed;
+  left: 0;
+  height: max(3px, .45vh);
+  background: linear-gradient(90deg, #fff 0, #fff calc(100% - 9vw), rgba(255, 255, 255, 0) 100%);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, .45);
+  pointer-events: none;
 }
-.panel-sub::after {          /* the small tick at the right end of the rule */
-  content: ""; position: absolute; right: -1px; bottom: -4px; width: 1px; height: 8px; background: #fff;
+.panel-sub {
+  position: fixed;
+  left: 2.3vh;
+  font-family: var(--display);
+  font-size: max(11px, 1.6vh);
+  letter-spacing: .06em;
+  color: #fff;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, .8);
 }
 
 .panel-main { position: relative; z-index: 2; display: flex; flex-direction: column; min-height: 0; max-height: 100%; }
@@ -438,9 +441,8 @@ body.open .panel { pointer-events: auto; opacity: 1; visibility: visible; transi
   .np-role { font-size: 12px; }
 }
 @media (max-width: 760px) {
-  .panel { padding: 17vh 16px 72px; }
-  .panel-title { font-size: 14vh; bottom: -9vh; }
-  .panel-sub { top: 9.6vh; width: 80vw; }
+  .panel { padding: 19vh 16px 72px; }
+  .panel-title { font-size: 14vh; bottom: -11vh; }
   .panel-body { padding: 1.4rem 1.2rem 1.6rem; clip-path: polygon(0 0, calc(100% - 22px) 0, 100% 22px, 100% 100%, 22px 100%, 0 calc(100% - 22px)); }
   .tab-btn span { display: none; }
   .back { right: 16px; bottom: 16px; }

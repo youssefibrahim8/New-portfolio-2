@@ -557,7 +557,7 @@ function openSection(id) {
   const back = current >= 0 && (i - current + SECTIONS.length) % SECTIONS.length > SECTIONS.length / 2;
   current = i;
   setActive(i);
-  pTitle.textContent = sec.label.toUpperCase();
+  pTitle.innerHTML = `${sec.label.toUpperCase()}<i class="bl"></i>`;
   fitTitle();
   pSub.textContent = sec.sub;
   if (!document.body.classList.contains("wiping")) panel.classList.remove("no-anim");
@@ -594,6 +594,13 @@ function fitTitle() {
   const w = pTitle.getBoundingClientRect().width;
   const sx = Math.min(1.18, (window.innerWidth * 0.8) / Math.max(1, w));
   pTitle.style.setProperty("--tsx", sx.toFixed(3));
+  // rule sits right on the baseline, under the whole word, and runs a little past it
+  const base = pTitle.querySelector(".bl").getBoundingClientRect().top;
+  const right = pTitle.getBoundingClientRect().right;
+  const rule = document.getElementById("panel-rule");
+  rule.style.top = base + "px";
+  rule.style.width = right + window.innerWidth * 0.09 + "px";
+  pSub.style.top = base + rule.offsetHeight + window.innerHeight * 0.012 + "px";
 }
 window.addEventListener("resize", () => isOpen() && fitTitle());
 
