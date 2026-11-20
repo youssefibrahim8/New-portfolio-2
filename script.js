@@ -112,10 +112,10 @@ const SLOTS = [
   { p0: [233, 268], a: 3,     len: 282, cap: 122, sc: 66 },
   { p0: [40, 360],  a: -1,    len: 532, cap: 123, sc: 74 },
   { p0: [160, 480], a: -8.5,  len: 435, cap: 120, sc: 68 },
-  { p0: [45, 678],  a: -21.5, len: 588, cap: 132, sc: 72 },
-  { p0: [302, 662], a: -28,   len: 322, cap: 100, sc: 58 },
-  { curve: [[40, 785], [340, 770], [640, 540]], cap: 122, sc: 62 },
-  { p0: [496, 718], a: -40,   len: 268, cap: 88,  sc: 54 },
+  { p0: [45, 652],  a: -21.5, len: 570, cap: 124, sc: 68 },
+  { p0: [300, 636], a: -27,   len: 300, cap: 94,  sc: 54 },
+  { curve: [[120, 714], [390, 712], [650, 556]], cap: 98,  sc: 52 },
+  { p0: [664, 716], a: -44,   len: 228, cap: 78,  sc: 46 },
 ];
 
 /* =========================================================
@@ -198,20 +198,35 @@ function pathD(pts) {
    Build the menu
    ========================================================= */
 const words = document.getElementById("words");
-const splats = document.getElementById("splats");
+const canvas = document.getElementById("splats");
+const ctx = canvas.getContext("2d");
 words.setAttribute("viewBox", "0 0 760 720");
-splats.setAttribute("viewBox", "0 0 760 720");
 
 const FONT = '"Abril Fatface"';
 const HOVER_SCALE = 1.18;   // the selected word grows, like EQUIPMENT in the reference
 const GAP = 0.34;           // how far neighbours move apart, as a fraction of the selected word's cap height
 
-/* The hover splatter is the exact shape and colour of the reference splash (assets/splat.png).
+/* The hover splash is the exact shape and colour of the reference splash (assets/splat.png).
    In that image the selected word's baseline starts at (495, 685), runs at 4.3° and is 960 px long,
-   with a 235 px tall first capital. Each word maps its own baseline onto that one. */
+   with a 235 px tall first capital. The splash is bent along each word's own baseline, extended back
+   to the left edge of the screen, and painted in with a single brush stroke. */
 const SPLAT = { w: 1616, h: 1337, ax: 495, ay: 685, ang: 4.3, len: 960, cap: 235 };
+const FLAT = { canvas: null, ax: 0, ay: 0, w: 0, h: 0 };
+const splatImg = new Image();
+splatImg.onload = () => {
+  // Pre-rotate the splash so its baseline is horizontal; that makes bending it along a curve simple.
+  const pad = 160, c = document.createElement("canvas");
+  c.width = SPLAT.w + pad * 2; c.height = SPLAT.h + pad * 2;
+  const g = c.getContext("2d");
+  g.translate(SPLAT.ax + pad, SPLAT.ay + pad);
+  g.rotate((-SPLAT.ang * Math.PI) / 180);
+  g.drawImage(splatImg, -SPLAT.ax, -SPLAT.ay);
+  Object.assign(FLAT, { canvas: c, ax: SPLAT.ax + pad, ay: SPLAT.ay + pad, w: c.width, h: c.height });
+  startStroke(true);
+};
+splatImg.src = "assets/splat.png";
 
-let ITEMS = []; // { el, splat, geo, slot, capLen, origin, dx, dy, scale }
+let ITEMS = []; // { el, tagEl, geo, slot, capLen, origin, dx, dy, scale }
 
 function fontRatios() {
   const c = document.createElement("canvas").getContext("2d");
@@ -222,8 +237,8 @@ function fontRatios() {
 
 function buildMenu() {
   const F = fontRatios();
-  words.innerHTML = "";
-  splats.querySelectorAll(".splat").forEach((n) => n.remove());
+  words.innerHTML = `<g class="word-layer"></g><g class="tag-layer"></g>`;
+  const wordLayer = words.firstChild, tagLayer = words.lastChild; // tags sit above every word
   ITEMS = SECTIONS.map((sec, i) => {
     const slot = SLOTS[i];
     const geo = sampleSlot(slot);
@@ -234,8 +249,7 @@ function buildMenu() {
     // Letters: big first capital, smaller capitals for the rest. Each glyph is placed on the baseline
     // individually and squeezed horizontally so the word spans exactly the reference length.
     const letters = [...sec.label].map((ch, k) => {
-      const isCap = k === 0 || slot.innerCap === k;
-      const fs = k === 0 ? capFs : isCap ? capFs * 0.82 : scFs * (0.97 + R() * 0.06);
+      const fs = k === 0 ? capFs : scFs * (0.97 + R() * 0.06);
       const glyph = ch.toUpperCase();
       F.ctx.font = `400 ${fs}px ${FONT}`;
       return { glyph, fs, adv: F.ctx.measureText(glyph).width, off: k ? (R() - 0.5) * slot.sc * 0.06 : 0, rot: k ? (R() - 0.5) * 3 : 0 };
@@ -252,8 +266,6 @@ function buildMenu() {
       sAcc += l.adv;
     });
 
-    const first = geo.pts[0];
-    const startAng = (Math.atan2(first.ty, first.tx) * 180) / Math.PI;
     const end = geo.pts[geo.pts.length - 1];
     const endAng = (Math.atan2(end.ty, end.tx) * 180) / Math.PI;
     const tagW = sec.tag.length * 9.6 + 28;
@@ -262,29 +274,108 @@ function buildMenu() {
 
     const g = document.createElementNS(NS, "g");
     g.setAttribute("class", "word");
-    g.innerHTML = `
-      <a href="#/${sec.id}" aria-label="${sec.label}" data-i="${i}">${glyphs}</a>
+    g.innerHTML = `<a href="#/${sec.id}" aria-label="${sec.label}" data-i="${i}">${glyphs}</a>`;
+    wordLayer.appendChild(g);
+
+    const t = document.createElementNS(NS, "g");
+    t.setAttribute("class", "tagwrap");
+    t.innerHTML = `
       <g class="tag" transform="translate(${end.x.toFixed(1)},${end.y.toFixed(1)}) rotate(${endAng.toFixed(1)})">
         <rect x="${tagX.toFixed(0)}" y="${ty0.toFixed(1)}" width="${tagW.toFixed(0)}" height="28" transform="skewX(-8)" />
         <text x="${(tagX + 12).toFixed(0)}" y="${(ty0 + 20.5).toFixed(1)}">${sec.tag}</text>
       </g>`;
-    words.appendChild(g);
-
-    // Splatter: map the reference baseline onto this word's baseline (length -> x, cap height -> y).
-    const sx = geo.len / SPLAT.len, sy = slot.cap / SPLAT.cap;
-    const sp = document.createElementNS(NS, "g");
-    sp.setAttribute("class", "splat");
-    sp.innerHTML = `<image href="assets/splat.png" width="${SPLAT.w}" height="${SPLAT.h}" preserveAspectRatio="none"
-      transform="translate(${first.x.toFixed(1)},${first.y.toFixed(1)}) rotate(${(startAng - SPLAT.ang).toFixed(2)}) scale(${sx.toFixed(4)},${sy.toFixed(4)}) translate(${-SPLAT.ax},${-SPLAT.ay})" />`;
-    splats.appendChild(sp);
+    tagLayer.appendChild(t);
 
     const mid = pointAt(geo, geo.len / 2);
     const origin = [mid.x + mid.ty * slot.sc * 0.5, mid.y - mid.tx * slot.sc * 0.5]; // grow from the word's centre
-    [g, sp].forEach((n) => (n.style.transformOrigin = `${origin[0].toFixed(1)}px ${origin[1].toFixed(1)}px`));
+    [g, t].forEach((n) => (n.style.transformOrigin = `${origin[0].toFixed(1)}px ${origin[1].toFixed(1)}px`));
     g.querySelector("a").addEventListener("focus", () => setActive(i));
-    return { el: g, splat: sp, geo, slot, capLen, origin, dx: 0, dy: 0, scale: 1 };
+    return { el: g, tagEl: t, geo, slot, capLen, origin, dx: 0, dy: 0, scale: 1 };
   });
-  setActive(active);
+  setActive(active, true);
+}
+
+/* ---------- Painted splash ---------- */
+// Point and tangent at arc length s, extending the baseline straight past both ends.
+function pathAt(geo, s) {
+  const pts = geo.pts;
+  if (s <= 0) { const p = pts[0]; return { x: p.x + p.tx * s, y: p.y + p.ty * s, tx: p.tx, ty: p.ty }; }
+  if (s >= geo.len) { const p = pts[pts.length - 1]; const d = s - geo.len; return { x: p.x + p.tx * d, y: p.y + p.ty * d, tx: p.tx, ty: p.ty }; }
+  return pointAt(geo, s);
+}
+
+// Column of the flattened splash to use at arc length s. Past the left of the image the band repeats (mirrored).
+function splashU(s, kx) {
+  let u = FLAT.ax + s / kx;
+  const right = FLAT.ax - 30, period = 240;
+  if (u < right - period) {
+    const d = (right - u) % (period * 2);
+    u = right - (d < period ? d : period * 2 - d);
+  }
+  return u;
+}
+
+let stroke = { item: -1, t0: 0, from: 1 };
+let raf = 0;
+
+function startStroke(instant = false) {
+  stroke = { item: active, t0: performance.now() - (instant ? 1e4 : 0), from: ITEMS[active] ? ITEMS[active].scaleFrom || 1 : 1 };
+  if (!raf) raf = requestAnimationFrame(frame);
+}
+
+const easeOut = (t) => 1 - Math.pow(1 - t, 3);
+
+function frame(now) {
+  raf = 0;
+  const dpr = window.devicePixelRatio || 1;
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const it = ITEMS[stroke.item];
+  if (!it || !FLAT.canvas || isOpen()) return;
+  const dur = 460;
+  const p = Math.min(1, (now - stroke.t0) / dur);
+  const e = easeOut(p);
+
+  ctx.setTransform(dpr * MS, 0, 0, dpr * MS, dpr * MX, dpr * MY);
+  // grow with the word (same timing as its CSS transition)
+  const sc = 1 + (HOVER_SCALE - 1) * Math.min(1, easeOut(Math.min(1, (now - stroke.t0) / 320)));
+  ctx.translate(it.origin[0], it.origin[1]); ctx.scale(sc, sc); ctx.translate(-it.origin[0], -it.origin[1]);
+
+  const geo = it.geo, kx = geo.len / SPLAT.len, ky = it.slot.cap / SPLAT.cap;
+  // The stroke starts where the baseline leaves the left (or top) of the screen.
+  let sStart = 0;
+  while (sStart > -2500) {
+    const q = pathAt(geo, sStart);
+    if (q.x < -40 - it.slot.cap || q.y < -60 - it.slot.cap * 2) break;
+    sStart -= 20;
+  }
+  const sEnd = (FLAT.w - FLAT.ax) * kx;
+  const sCut = sStart + e * (sEnd - sStart);
+  const ds = 5, head = 46;
+
+  for (let s = sStart; s < sCut; s += ds) {
+    const q = pathAt(geo, s);
+    const u = splashU(s, kx);
+    const du = ds / kx;
+    // the brush head: thinner and lighter right at the leading edge
+    const k = Math.min(1, (sCut - s) / head);
+    const hScale = p < 1 ? 0.55 + 0.45 * Math.sqrt(k) : 1;
+    ctx.save();
+    ctx.translate(q.x, q.y);
+    ctx.rotate(Math.atan2(q.ty, q.tx));
+    ctx.globalAlpha = p < 1 ? 0.5 + 0.5 * k : 1;
+    ctx.scale(1, hScale);
+    ctx.drawImage(FLAT.canvas, u, 0, Math.max(1, du), FLAT.h, 0, -FLAT.ay * ky, ds + 0.9, FLAT.h * ky);
+    ctx.restore();
+  }
+  if (p < 1 || (now - stroke.t0) < 340) raf = requestAnimationFrame(frame);
+}
+
+function resizeCanvas() {
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = Math.round(window.innerWidth * dpr);
+  canvas.height = Math.round(window.innerHeight * dpr);
+  if (!raf) raf = requestAnimationFrame(frame);
 }
 
 /* =========================================================
@@ -326,26 +417,30 @@ function hitTest(x, y) {
 }
 
 let active = 0;
-function setActive(i) {
+function setActive(i, instant = false) {
+  const prev = active;
   active = (i + SECTIONS.length) % SECTIONS.length;
   const A = ITEMS[active];
   ITEMS.forEach((it, j) => {
     const on = j === active;
     it.el.classList.toggle("active", on);
-    it.splat.classList.toggle("on", on);
-    // Open up space: the selected word grows, words above move up, words below move down
+    it.tagEl.classList.toggle("active", on);
+    // Open up space: the selected word grows, nearby words above move up and below move down
     // (each along its own "up" direction, so the fan keeps its shape).
     let dx = 0, dy = 0;
     if (A && !on) {
+      const d = Math.abs(j - active);
+      const fall = Math.max(0, 1 - (d - 1) * 0.5) * (j < active ? 1 : -0.75);
       const p = it.geo.pts[Math.floor(it.geo.pts.length / 2)];
-      const dist = A.slot.cap * GAP * (j < active ? 1 : -1);
+      const dist = A.slot.cap * GAP * fall;
       dx = p.ty * dist; dy = -p.tx * dist;
     }
     it.dx = dx; it.dy = dy; it.scale = on ? HOVER_SCALE : 1;
     const tf = on ? `scale(${HOVER_SCALE})` : `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px)`;
     it.el.style.transform = tf;
-    it.splat.style.transform = on ? `scale(${HOVER_SCALE})` : "";
+    it.tagEl.style.transform = tf;
   });
+  if (ITEMS.length && (prev !== active || instant)) startStroke(instant);
 }
 
 const root = document.documentElement;
@@ -441,6 +536,7 @@ function closeSection(updateHash = true) {
   document.body.classList.remove("open");
   panel.setAttribute("aria-hidden", "true");
   current = -1;
+  if (ITEMS.length) startStroke();
   if (updateHash && location.hash) history.pushState("", document.title, location.pathname + location.search);
 }
 
@@ -477,7 +573,6 @@ document.addEventListener("keydown", (e) => {
 /* =========================================================
    Layout
    ========================================================= */
-const lines = document.querySelector(".lines");
 
 function layout() {
   const W = window.innerWidth, H = window.innerHeight;
@@ -487,8 +582,8 @@ function layout() {
     const ox = (W - 1280 * s) / 2, oy = (H - 720 * s) / 2;
     MS = s; MX = ox; MY = oy;
     hw = 1036 * s;
-    hx = ox + 363 * s;
-    hy = H + 18 * s - hw * (1001 / 1570); // bottom edge stays below the screen while floating
+    hx = Math.max(ox + 363 * s, W - hw + 2); // the body always reaches the right edge of the screen
+    hy = H + 26 * s - hw * (1001 / 1570); // bottom edge stays below the screen while floating
     ui = Math.max(0.7, s);
   } else {
     MS = Math.min(W / 700, (H * 0.6) / 720);
@@ -506,45 +601,7 @@ function layout() {
   root.style.setProperty("--heroW", hw.toFixed(1) + "px");
   root.style.setProperty("--heroX", hx.toFixed(1) + "px");
   root.style.setProperty("--heroY", hy.toFixed(1) + "px");
-  drawLines(W, H, hx, hy, hw);
-}
-
-/* Thin, faded white lines: giant circles around the head, a long diagonal and a dashed crosshair. */
-function drawLines(W, H, hx, hy, hw) {
-  const hh = hw * (1001 / 1570);
-  const cx = hx + hw * 0.38, cy = hy + hh * 0.52;
-  const R1 = hw * 0.52, R2 = hw * 0.34, R3 = hw * 0.74;
-  const ex = hx + hw * 0.518, ey = hy + hh * 0.266;
-  const diag = { x1: hx + hw * 0.02, y1: H + 20, x2: W + 20, y2: hy + hh * 0.08 };
-  const hzY = hy + hh * 0.5, vX = Math.min(W - 40, hx + hw * 0.92);
-  const fade = Math.max(W, H);
-  lines.setAttribute("viewBox", `0 0 ${W} ${H}`);
-  lines.innerHTML = `
-    <defs>
-      <radialGradient id="lineFade" gradientUnits="userSpaceOnUse" cx="${cx}" cy="${cy}" r="${fade * 0.75}">
-        <stop offset="0" stop-color="#fff" stop-opacity="1"/>
-        <stop offset=".55" stop-color="#fff" stop-opacity=".7"/>
-        <stop offset="1" stop-color="#fff" stop-opacity="0"/>
-      </radialGradient>
-      <mask id="lineMask"><rect width="${W}" height="${H}" fill="url(#lineFade)"/></mask>
-    </defs>
-    <g mask="url(#lineMask)">
-      <g class="spin" style="transform-origin:${cx}px ${cy}px">
-        <circle class="l" cx="${cx}" cy="${cy}" r="${R1}" stroke-opacity=".45" stroke-width="1.1"/>
-        <circle class="l" cx="${cx}" cy="${cy}" r="${R1 + 6}" stroke-opacity=".16" stroke-dasharray="2 10"/>
-      </g>
-      <circle class="l" cx="${cx}" cy="${cy}" r="${R2}" stroke-opacity=".22"/>
-      <g class="spin rev" style="transform-origin:${cx}px ${cy}px">
-        <circle class="l" cx="${cx}" cy="${cy}" r="${R3}" stroke-opacity=".28" stroke-dasharray="${R3 * 2.4} ${R3 * 0.8}"/>
-      </g>
-      <circle class="l" cx="${ex}" cy="${ey}" r="${hw * 0.24}" stroke-opacity=".18"/>
-      <line class="l" x1="${diag.x1}" y1="${diag.y1}" x2="${diag.x2}" y2="${diag.y2}" stroke-opacity=".5" stroke-width="1.1"/>
-      <line class="l" x1="${diag.x1 + 14}" y1="${diag.y1}" x2="${diag.x2 + 14}" y2="${diag.y2}" stroke-opacity=".14"/>
-      <line class="l" x1="${hx + hw * 0.6}" y1="${hzY}" x2="${W}" y2="${hzY}" stroke-opacity=".4"/>
-      <line class="l" x1="${hx + hw * 0.6}" y1="${hzY + 4}" x2="${W}" y2="${hzY + 4}" stroke-opacity=".26" stroke-dasharray="14 6 2 6"/>
-      <line class="l" x1="${vX}" y1="${Math.max(120, hy)}" x2="${vX}" y2="${hzY + 30}" stroke-opacity=".34" stroke-dasharray="40 8 4 8"/>
-      <line class="l" x1="${vX - 10}" y1="${hzY}" x2="${vX + 10}" y2="${hzY}" stroke-opacity=".75" stroke-width="1.4"/>
-    </g>`;
+  resizeCanvas();
 }
 
 window.addEventListener("resize", layout);

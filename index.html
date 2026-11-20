@@ -15,8 +15,7 @@
   <div class="bg" aria-hidden="true"></div>
 
   <!-- Menu splatter layer (behind the character, like the reference) -->
-  <svg class="menu-svg splats" id="splats" aria-hidden="true">
-  </svg>
+  <canvas class="splats" id="splats" aria-hidden="true"></canvas>
 
   <!-- Character -->
   <div class="hero" aria-hidden="true">
@@ -27,7 +26,28 @@
   </div>
 
   <!-- Thin white faded lines -->
-  <svg class="lines" aria-hidden="true"></svg>
+  <svg class="lines" viewBox="0 0 2000 1129" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <defs>
+      <filter id="chalk" x="-2%" y="-2%" width="104%" height="104%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.5" numOctaves="2" seed="7" result="n" />
+        <feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -3.4 2.75" result="a" />
+        <feComposite in="SourceGraphic" in2="a" operator="in" />
+      </filter>
+      <linearGradient id="vfade" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="822">
+        <stop offset="0" stop-color="#fff" stop-opacity=".85" />
+        <stop offset=".8" stop-color="#fff" stop-opacity=".8" />
+        <stop offset="1" stop-color="#fff" stop-opacity="0" />
+      </linearGradient>
+    </defs>
+    <!-- Copied from the reference artwork: same positions, thickness and opacity -->
+    <g filter="url(#chalk)" fill="none" stroke="#fff">
+      <circle cx="1083.5" cy="547" r="685" stroke-width="4.2" stroke-opacity=".72" />
+      <circle cx="1090" cy="570" r="367" stroke-width="3.2" stroke-opacity=".6" />
+      <line x1="1060" y1="1131" x2="2040" y2="108" stroke-width="2.6" stroke-opacity=".78" stroke-dasharray="74 9 22 8 130 7 46 10 96 8" />
+      <line x1="1171" y1="613" x2="2000" y2="613" stroke-width="3" stroke-opacity=".85" stroke-dasharray="118 8 14 8 64 6 30 7 160 9" />
+      <line x1="1909" y1="0" x2="1909" y2="822" stroke="url(#vfade)" stroke-width="3" stroke-dasharray="92 7 52 9 20 6 70 8" />
+    </g>
+  </svg>
 
   <!-- Menu text layer -->
   <svg class="menu-svg words" id="words" role="navigation" aria-label="Portfolio sections"></svg>
