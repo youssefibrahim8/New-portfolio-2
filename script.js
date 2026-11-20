@@ -131,6 +131,7 @@ const PROJECTS = [
       "Built with plain HTML, CSS and JavaScript, with no frameworks or build step.",
     ],
     code: "https://github.com/youssefibrahim8/New-portfolio-2", live: "",
+    preview: "assets/previews/command-menu.jpg",   // a screenshot shown when the hexagon is hovered
   },
   {
     slug: "project-two", title: "Project Two", year: "20XX", kind: "Java", icon: "coffee", hex: [791, 537],
@@ -150,6 +151,13 @@ const PROJECTS = [
     slug: "project-four", title: "Project Four", year: "20XX", kind: "C++", icon: "chip", hex: [950, 746],
     tags: ["C++"],
     summary: "Another project worth showing off, ideally with a live demo link.",
+    details: ["Describe the project: what it does, why you built it and what you learned."],
+    code: "#", live: "",
+  },
+  {
+    slug: "project-five", title: "Project Five", year: "20XX", kind: "Web", icon: "globe", hex: [755, 375],
+    tags: ["JavaScript"],
+    summary: "One more project: a short line on what it does.",
     details: ["Describe the project: what it does, why you built it and what you learned."],
     code: "#", live: "",
   },
@@ -199,7 +207,19 @@ window.addEventListener("resize", placeNodes);
 
 // The tree screen is just the artwork and its hexagons (the buttons live in .pnodes, over everything).
 function projectsTree() {
-  return `<div class="ptree"></div>`;
+  return `<div class="ptree"><aside class="ppreview" aria-live="polite"></aside></div>`;
+}
+
+// The little display on the left: a screenshot (or a placeholder) with the project's details.
+function projectPreview(p) {
+  const shot = p.preview
+    ? `<img src="${p.preview}" alt="Screenshot of ${p.title}">`
+    : `<div class="pv-ph"><span class="hexb sm"><span class="hexi">${iconSVG(p.icon)}</span></span><small>Add a screenshot: set <code>preview</code></small></div>`;
+  return `<div class="pv-shot">${shot}</div>
+    <div class="pv-meta"><span>${p.kind}</span><b>${p.year}</b></div>
+    <div class="pv-title">${p.title}</div>
+    <p>${p.summary}</p>
+    <ul class="chips">${p.tags.map((t) => `<li>${t}</li>`).join("")}</ul>`;
 }
 
 // Projects mode: artwork background on, character / lines off. Hexagon buttons only on the tree.
@@ -251,8 +271,20 @@ function renderProjects(sub) {
     pBody.querySelector(".pd-info").animate([{ opacity: 0, transform: "translateX(24px)" }, { opacity: 1, transform: "none" }], { duration: 420, delay: 180, easing: "cubic-bezier(.2,.8,.2,1)", fill: "backwards" });
     return;
   }
-  // tree: clicking a hexagon opens its project
-  pnodes.querySelectorAll(".pnode").forEach((el) => el.addEventListener("click", () => (location.hash = `#/projects/${el.dataset.p}`)));
+  // tree: hovering a hexagon shows its project on the left, clicking opens it
+  const pv = pBody.querySelector(".ppreview");
+  const show = (k) => {
+    pnodes.querySelectorAll(".pnode").forEach((el) => el.classList.toggle("on", +el.dataset.k === k));
+    if (k >= 0) pv.innerHTML = projectPreview(PROJECTS[k]);
+    pv.classList.toggle("show", k >= 0);
+  };
+  pnodes.querySelectorAll(".pnode").forEach((el) => {
+    el.addEventListener("mouseenter", () => show(+el.dataset.k));
+    el.addEventListener("focus", () => show(+el.dataset.k));
+    el.addEventListener("mouseleave", () => show(-1));
+    el.addEventListener("blur", () => show(-1));
+    el.addEventListener("click", () => (location.hash = `#/projects/${el.dataset.p}`));
+  });
   // coming back from a project: fly its hexagon home
   if (prev && fromRect) {
     const k = PROJECTS.findIndex((q) => q.slug === prev);

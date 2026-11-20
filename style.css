@@ -471,7 +471,30 @@ body.wiping .panel-splat { opacity: 0; }
   height: 100%;
 }
 .panel-body.bare::before { display: none; }
-.ptree { height: 100%; }
+.ptree { position: relative; height: 100%; }
+/* project display on the left, shown while a hexagon is hovered */
+.ppreview {
+  position: absolute; left: 0; top: 2vh;
+  width: min(30vw, 400px);
+  padding: 14px 16px 16px;
+  background: linear-gradient(160deg, rgba(6, 10, 16, .9), rgba(6, 10, 16, .78));
+  border-top: 1px solid rgba(255, 255, 255, .7);
+  border-bottom: 1px solid rgba(255, 255, 255, .7);
+  opacity: 0; transform: translateX(-16px);
+  transition: opacity .18s ease, transform .25s cubic-bezier(.2, .8, .2, 1);
+  pointer-events: none;
+}
+.ppreview.show { opacity: 1; transform: none; }
+.pv-shot { aspect-ratio: 16 / 9; overflow: hidden; border: 1px solid rgba(255, 255, 255, .35); background: #070b10; margin-bottom: 10px; }
+.pv-shot img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pv-ph { height: 100%; display: grid; place-items: center; align-content: center; gap: 8px; color: #9fb0b8; }
+.pv-ph small { font-size: 12px; letter-spacing: .04em; }
+.pv-meta { font-family: var(--display); font-size: .78em; letter-spacing: .14em; color: #cfd8dc; display: flex; gap: .6em; align-items: baseline; }
+.pv-meta b { font-family: var(--heavy); font-weight: 400; font-size: 1.6em; color: #fff; letter-spacing: 0; }
+.pv-title { font-family: var(--display); font-weight: 700; font-size: max(18px, 2.6vh); line-height: 1.1; margin: 2px 0 6px; }
+.ppreview p { font-size: .88em; margin: 0 0 .6em !important; }
+.ppreview .chips li { font-size: .62em; }
+@media (max-aspect-ratio: 1/1) { .ppreview { display: none; } }
 
 /* projects artwork background and its clickable hexagons */
 .pbg {
@@ -495,16 +518,18 @@ body:not(.ptree-on) .pnodes, body.wiping .pnodes { display: none; }
   clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%);
   transition: transform .2s cubic-bezier(.3, 1.4, .5, 1);
 }
-.pnode .hexring {           /* glowing rim in the section colour, over the drawn hexagon */
+.pnode .hexring {           /* white rim over the drawn hexagon */
   position: absolute; inset: 0;
-  background: var(--purple);
+  background: #fff;
   clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%, 9% 50%, 30% 89%, 70% 89%, 91% 50%, 70% 11%, 30% 11%, 9% 50%, 0 50%);
   opacity: 0; transition: opacity .15s ease;
 }
-.pnode::after { content: ""; position: absolute; inset: 0; background: #fff; opacity: 0; transition: opacity .15s ease; }
+.pnode::after { content: ""; position: absolute; inset: 0; background: radial-gradient(closest-side, rgba(255,255,255,.35), rgba(255,255,255,.12)); opacity: 0; transition: opacity .15s ease; }
+.pnode { transition: transform .2s cubic-bezier(.3, 1.4, .5, 1), filter .2s ease; }
+.pnode:hover, .pnode.on, .pnode:focus-visible { filter: drop-shadow(0 0 6px rgba(255, 255, 255, .9)) drop-shadow(0 0 14px rgba(255, 255, 255, .5)); }
 .pnode:hover, .pnode.on, .pnode:focus-visible { transform: translate(-50%, -50%) scale(1.18); outline: none; }
 .pnode:hover .hexring, .pnode.on .hexring, .pnode:focus-visible .hexring { opacity: 1; }
-.pnode:hover::after { opacity: .08; }
+.pnode:hover::after, .pnode.on::after, .pnode:focus-visible::after { opacity: 1; }
 
 /* a hexagon: white rim, dark face, white icon */
 .hexb {
