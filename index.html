@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Portfolio — Command Menu</title>
+  <meta name="description" content="Personal portfolio styled as a dramatic RPG command menu." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display+SC:wght@400;700;900&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- ===== Grunge background (red left, teal right) ===== -->
+  <svg class="bg" aria-hidden="true" preserveAspectRatio="none">
+    <defs>
+      <filter id="grungeDark" x="0" y="0" width="100%" height="100%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.005 0.008" numOctaves="6" seed="7" />
+        <feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -6 3.25" />
+      </filter>
+      <filter id="grungeFine" x="0" y="0" width="100%" height="100%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.06 0.03" numOctaves="4" seed="3" />
+        <feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -9 4.9" />
+      </filter>
+      <filter id="grungeRed" x="0" y="0" width="100%" height="100%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.011 0.006" numOctaves="5" seed="21" />
+        <feColorMatrix type="matrix" values="0 0 0 0 0.86  0 0 0 0 0.14  0 0 0 0 0.16  0 0 0 -6 3.4" />
+      </filter>
+      <filter id="grungeTeal" x="0" y="0" width="100%" height="100%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.009" numOctaves="5" seed="44" />
+        <feColorMatrix type="matrix" values="0 0 0 0 0.30  0 0 0 0 0.52  0 0 0 0 0.55  0 0 0 -6 3.2" />
+      </filter>
+      <filter id="grain">
+        <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="5" />
+        <feColorMatrix type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 -1.6 1" />
+      </filter>
+      <linearGradient id="baseGrad" x1="0" y1="0" x2="1" y2="0.35">
+        <stop offset="0" stop-color="#b3212a" />
+        <stop offset="0.38" stop-color="#7d1219" />
+        <stop offset="0.58" stop-color="#1a0b0e" />
+        <stop offset="0.8" stop-color="#14262b" />
+        <stop offset="1" stop-color="#2c5257" />
+      </linearGradient>
+      <radialGradient id="redFade" cx="0.15" cy="0.45" r="0.65">
+        <stop offset="0" stop-color="#fff" />
+        <stop offset="1" stop-color="#000" />
+      </radialGradient>
+      <mask id="redMask"><rect width="100%" height="100%" fill="url(#redFade)" /></mask>
+      <radialGradient id="tealFade" cx="0.95" cy="0.85" r="0.55">
+        <stop offset="0" stop-color="#fff" />
+        <stop offset="1" stop-color="#000" />
+      </radialGradient>
+      <mask id="tealMask"><rect width="100%" height="100%" fill="url(#tealFade)" /></mask>
+    </defs>
+    <rect width="100%" height="100%" fill="url(#baseGrad)" />
+    <rect width="100%" height="100%" filter="url(#grungeRed)" mask="url(#redMask)" />
+    <rect width="100%" height="100%" filter="url(#grungeTeal)" mask="url(#tealMask)" />
+    <rect width="100%" height="100%" filter="url(#grungeDark)" opacity="0.85" />
+    <rect width="100%" height="100%" filter="url(#grungeFine)" opacity="0.4" />
+    <rect width="100%" height="100%" filter="url(#grain)" opacity="0.06" />
+  </svg>
+
+  <!-- ===== Thin white faded lines (circles, diagonal, crosshair) ===== -->
+  <svg class="lines" aria-hidden="true"></svg>
+
+  <!-- ===== Character ===== -->
+  <div class="hero" aria-hidden="true">
+    <div class="hero-float">
+      <img class="hero-img" src="assets/character.webp" alt="" />
+      <div class="eye">
+        <span class="eye-bloom"></span>
+        <span class="eye-core"></span>
+        <span class="eye-flare h"></span>
+        <span class="eye-flare d1"></span>
+        <span class="eye-flare d2"></span>
+        <span class="eye-ring"></span>
+        <div class="embers"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Command emblem, top right ===== -->
+  <div class="emblem" aria-hidden="true">
+    <svg viewBox="0 0 220 260">
+      <path d="M8 0 H220 V70 C170 30 110 40 96 66 L60 26 Z" fill="#ececec" />
+      <path d="M150 62 C70 56 52 150 112 196 C150 224 200 212 220 186 V250 C150 270 60 240 44 170 C30 100 80 50 150 62 Z" fill="#e8e8e8" />
+      <path d="M220 120 C190 110 150 120 140 150 C170 140 200 150 220 170 Z" fill="#c4202a" />
+      <path d="M138 98 C112 112 104 146 120 170 C108 140 120 112 160 100 Z" fill="#c4202a" />
+    </svg>
+    <span class="emblem-label">Menu</span>
+  </div>
+
+  <!-- ===== Name plate ===== -->
+  <div class="nameplate">
+    <span class="np-name" data-bind="name"></span>
+    <span class="np-role" data-bind="role"></span>
+  </div>
+
+  <!-- ===== Main command menu ===== -->
+  <nav class="menu" id="menu" aria-label="Portfolio sections"></nav>
+
+  <!-- ===== Control hints, bottom right ===== -->
+  <div class="hints" aria-hidden="true">
+    <span><b>Enter</b> Select</span>
+    <span><b>Esc</b> Back</span>
+  </div>
+
+  <!-- ===== Section panel ===== -->
+  <section class="panel" id="panel" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="panel-title">
+    <div class="panel-head">
+      <div class="panel-title-wrap">
+        <svg class="panel-splat" viewBox="0 0 300 160" preserveAspectRatio="none" aria-hidden="true"></svg>
+        <h1 class="panel-title" id="panel-title"></h1>
+      </div>
+      <span class="panel-sub" id="panel-sub"></span>
+    </div>
+    <div class="panel-body" id="panel-body" tabindex="-1"></div>
+    <button class="back" id="back" type="button"><b>Esc</b> Back</button>
+  </section>
+
+  <script src="script.js"></script>
+</body>
+</html>
