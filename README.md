@@ -17,7 +17,7 @@ A personal portfolio styled as a dramatic RPG command menu: a fanned stack of se
 All content lives at the top of `script.js`:
 - `PROFILE`: name, role, email, links, résumé path.
 - `SECTIONS`: the text for each panel.
-- `PROJECTS`: your projects (title, year, icon, tags, description, links). `cell` picks which hexagon of the projects tree the project sits in.
+- `PROJECTS`: your projects (title, year, icon, tags, description, links). `hex` is the centre (in pixels) of the hexagon in `assets/projects-bg.jpg` that the project sits on.
 - `SLOTS`: the baseline, angle, length and letter heights of each menu word.
 
 Put your CV at `assets/resume.pdf`.
