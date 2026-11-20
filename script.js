@@ -178,8 +178,9 @@ document.body.append(pbg, pnodes);
 function pbgFit() {
   const W = window.innerWidth, H = window.innerHeight;
   if (W >= H) {
-    const s = Math.max(W / PBG.w, H / PBG.h);
-    return { s, ox: (W - PBG.w * s) / 2, oy: (H - PBG.h * s) / 2 };
+    // the circle (image y 21-891, centre x 835) fills 74% of the screen height, below the title
+    const s = (H * 0.74) / 870;
+    return { s, ox: W / 2 - 835 * s, oy: H * 0.19 - 21 * s };
   }
   const s = Math.min((H * 0.4) / 452, W / 300);   // the project hexagons span 452 px of the image vertically
   return { s, ox: W / 2 - 825 * s, oy: H * 0.55 - 520 * s };

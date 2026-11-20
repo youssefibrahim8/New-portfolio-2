@@ -481,7 +481,11 @@ body.wiping .panel-splat { opacity: 0; }
 }
 body.pmode .pbg { opacity: 1; visibility: visible; }
 body.pmode:not(.ptree-on) .pbg { filter: brightness(.55); }
-body.pmode .hero, body.pmode .lines { visibility: hidden; }
+body.pmode .hero, body.pmode .lines, body.pmode .bg { visibility: hidden; }
+body.pmode { background: #03050a; }   /* matches the artwork's dark edges */
+@media (min-aspect-ratio: 1/1) {
+  .pbg { -webkit-mask-image: radial-gradient(closest-side, #000 82%, transparent); mask-image: radial-gradient(closest-side, #000 82%, transparent); -webkit-mask-size: 100% 100%; mask-size: 100% 100%; }
+}
 .pnodes { position: fixed; inset: 0; z-index: 9; pointer-events: none; }
 body:not(.ptree-on) .pnodes, body.wiping .pnodes { display: none; }
 .pnode {
