@@ -50,13 +50,7 @@ const SECTIONS = [
   },
   {
     id: "projects", label: "Projects", tag: "My work", sub: "Things I've built",
-    html: () => `
-      <div class="cards">
-        ${project(1, "Command Menu Portfolio", "This site: an RPG-style command menu with paint splatter hovers and a floating character.", ["HTML", "CSS", "JS"], PROFILE.github + "/New-portfolio-2")}
-        ${project(2, "Project Two", "A short, punchy description of what it does and the problem it solves.", ["Java"], "#")}
-        ${project(3, "Project Three", "Highlight the most interesting technical challenge or result here.", ["Python"], "#")}
-        ${project(4, "Project Four", "Another project worth showing off, ideally with a live demo link.", ["C++"], "#")}
-      </div>`,
+    html: () => projectsTree(),
   },
   {
     id: "education", label: "Education", tag: "Studies", sub: "Where I learned",
@@ -117,6 +111,211 @@ const SLOTS = [
   { p0: [368, 678.2], a: -24, len: 316, cap: 84, sc: 50, taper: 0.84 },
   { p0: [549.7, 697.8], a: -31.5, len: 260, cap: 71, sc: 44, taper: 0.85 },
 ];
+
+
+/* =========================================================
+   PROJECTS: the "archetype tree" view.
+   A drawn figure inside a circle, on a honeycomb of hexagons. Each project sits in one hexagon.
+   Clicking a project's hexagon enlarges it, flies it to the top left and opens that project's page;
+   Esc (or Back) returns to the tree.
+   Edit your projects here. `cell` is the hexagon the project sits in: [column, row] from the centre.
+   ========================================================= */
+const PROJECTS = [
+  {
+    slug: "command-menu", title: "Command Menu Portfolio", year: "2026", kind: "Web", icon: "code", cell: [0, -4],
+    tags: ["HTML", "CSS", "JavaScript", "Canvas"],
+    summary: "This site: an RPG-style command menu with painted hovers and a floating character.",
+    details: [
+      "A portfolio built to feel like a game's command menu. Every option is fitted along a fan around the character's head, and hovering paints a splash in with a single brush stroke along the word.",
+      "Opening a page plays a frame-by-frame recreation of a menu transition: letters scatter, the splash breaks apart and a white band sweeps in over the next page.",
+      "Built with plain HTML, CSS and JavaScript, with no frameworks or build step.",
+    ],
+    code: "https://github.com/youssefibrahim8/New-portfolio-2", live: "",
+  },
+  {
+    slug: "project-two", title: "Project Two", year: "20XX", kind: "Java", icon: "coffee", cell: [-3, -1],
+    tags: ["Java"],
+    summary: "A short, punchy description of what it does and the problem it solves.",
+    details: ["Describe the project: what it does, why you built it and what you learned.", "Mention the hardest technical problem and how you solved it."],
+    code: "#", live: "",
+  },
+  {
+    slug: "project-three", title: "Project Three", year: "20XX", kind: "Python", icon: "terminal", cell: [-1, 1],
+    tags: ["Python"],
+    summary: "Highlight the most interesting technical challenge or result here.",
+    details: ["Describe the project: what it does, why you built it and what you learned.", "Add numbers if you have them: users, speed-ups, accuracy, stars."],
+    code: "#", live: "",
+  },
+  {
+    slug: "project-four", title: "Project Four", year: "20XX", kind: "C++", icon: "chip", cell: [2, 4],
+    tags: ["C++"],
+    summary: "Another project worth showing off, ideally with a live demo link.",
+    details: ["Describe the project: what it does, why you built it and what you learned."],
+    code: "#", live: "",
+  },
+];
+
+const ICONS = {
+  code: '<path d="M8 6 2 12l6 6M16 6l6 6-6 6M14 4l-4 16"/>',
+  coffee: '<path d="M4 9h12v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5zM16 10h2a3 3 0 0 1 0 6h-2M8 2v4M12 2v4"/>',
+  terminal: '<path d="M3 4h18v16H3zM7 9l3 3-3 3M12 15h5"/>',
+  chip: '<path d="M7 7h10v10H7zM10 10h4v4h-4zM9 2v5M15 2v5M9 17v5M15 17v5M2 9h5M2 15h5M17 9h5M17 15h5"/>',
+  globe: '<path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zM2 12h20M12 2c3 3 3 17 0 20M12 2c-3 3-3 17 0 20"/>',
+  game: '<path d="M6 8h12a4 4 0 0 1 4 4v1a4 4 0 0 1-7 2.6L14 15h-4l-1 .6A4 4 0 0 1 2 13v-1a4 4 0 0 1 4-4zM7 11v3M5.5 12.5h3M16 12h.01M18 14h.01"/>',
+};
+const iconSVG = (k) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${ICONS[k] || ICONS.code}</svg>`;
+
+// Honeycomb geometry (flat-topped hexagons) inside a 1000 x 1000 drawing.
+const HEX = { cx: 500, cy: 520, r: 38 };
+function hexCenter(c, r) {
+  const w = HEX.r * 1.5, h = HEX.r * Math.sqrt(3);
+  return [HEX.cx + c * w, HEX.cy + r * h + (Math.abs(c) % 2 ? h / 2 : 0)];
+}
+function hexPoints(x, y, r) {
+  return [0, 1, 2, 3, 4, 5].map((k) => { const a = (Math.PI / 3) * k; return `${(x + r * Math.cos(a)).toFixed(1)},${(y + r * Math.sin(a)).toFixed(1)}`; }).join(" ");
+}
+
+// The drawing: circle, square, a figure with two arm and two leg positions, and the honeycomb.
+function treeSVG() {
+  let cells = "";
+  for (let c = -10; c <= 10; c++) for (let r = -10; r <= 10; r++) {
+    const [x, y] = hexCenter(c, r);
+    const d = Math.hypot(x - HEX.cx, y - HEX.cy);
+    if (d > 400) continue;
+    // brighter along the body (a vertical column) and the outstretched arms (a band)
+    const body = Math.abs(x - HEX.cx) < 110 || (Math.abs(y - 330) < 70 && Math.abs(x - HEX.cx) < 390);
+    const op = body ? 0.55 : 0.16;
+    cells += `<polygon points="${hexPoints(x, y, HEX.r - 2)}" stroke-opacity="${op}"/>`;
+  }
+  return `<svg class="tree-art" viewBox="0 0 1000 1000" aria-hidden="true">
+    <defs>
+      <filter id="chalk2"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="3"/><feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -1.6 1.75"/><feComposite in="SourceGraphic" operator="in"/></filter>
+      <radialGradient id="treeGlow" cx=".5" cy=".52" r=".5"><stop offset="0" stop-color="#0a141a" stop-opacity=".78"/><stop offset=".75" stop-color="#0a141a" stop-opacity=".55"/><stop offset="1" stop-color="#0a141a" stop-opacity="0"/></radialGradient>
+    </defs>
+    <circle cx="500" cy="520" r="470" fill="url(#treeGlow)"/>
+    <g filter="url(#chalk2)" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="500" cy="520" r="430" stroke="#c9d6d4" stroke-opacity=".55" stroke-width="3"/>
+      <rect x="160" y="190" width="680" height="680" stroke="#c9d6d4" stroke-opacity=".38" stroke-width="2.4"/>
+      <g class="cells" stroke="#d8e3e1" stroke-width="1.6">${cells}</g>
+      <!-- figure: head, torso, arms (level and raised), legs (together and apart) -->
+      <g stroke="#a8e6cf" stroke-opacity=".95" stroke-width="4.2">
+        <circle cx="500" cy="250" r="52"/>
+        <path d="M478 300 470 330M522 300 530 330"/>
+        <path d="M470 330 C430 336 330 336 170 338M530 330 C570 336 670 336 830 338"/>
+        <path d="M470 340 C420 300 330 230 250 170M530 340 C580 300 670 230 750 170"/>
+        <path d="M455 345 C450 420 455 470 470 560 M545 345 C550 420 545 470 530 560 M470 560 Q500 580 530 560"/>
+      </g>
+      <g stroke="#f0a8c8" stroke-opacity=".9" stroke-width="4.2">
+        <path d="M478 570 C470 680 468 760 470 865M522 570 C530 680 532 760 530 865"/>
+        <path d="M470 575 C430 660 360 760 300 840M530 575 C570 660 640 760 700 840"/>
+      </g>
+      <g stroke="#c9d6d4" stroke-opacity=".3" stroke-width="1.4">
+        <path d="M500 60V990M40 520H960"/>
+        <circle cx="830" cy="560" r="44"/><circle cx="830" cy="560" r="12"/>
+        <circle cx="170" cy="760" r="34"/>
+      </g>
+    </g>
+  </svg>`;
+}
+
+function projectsTree() {
+  const nodes = PROJECTS.map((p, k) => {
+    const [x, y] = hexCenter(p.cell[0], p.cell[1]);
+    return `<button class="pnode" type="button" data-p="${p.slug}" data-k="${k}" style="left:${x / 10}%;top:${y / 10}%" aria-label="${p.title}">
+      <span class="hexb"><span class="hexi">${iconSVG(p.icon)}</span></span></button>`;
+  }).join("");
+  const list = PROJECTS.map((p, k) =>
+    `<li><button type="button" class="pitem" data-p="${p.slug}" data-k="${k}"><span class="pn">${p.title}</span><span class="py"><small>YR.</small>${p.year}</span></button></li>`).join("");
+  return `<div class="ptree">
+    <div class="pside">
+      <p class="pprompt">Which project will you open?</p>
+      <ul class="plist">${list}</ul>
+    </div>
+    <div class="pdiagram">${treeSVG()}${nodes}</div>
+    <aside class="pcard" aria-live="polite"></aside>
+  </div>`;
+}
+
+function projectCard(p) {
+  return `<div class="pc-head"><span class="hexb sm"><span class="hexi">${iconSVG(p.icon)}</span></span>
+      <div><div class="pc-title">${p.title}</div><div class="pc-kind">${p.kind} <b>${p.year}</b></div></div></div>
+    <p>${p.summary}</p>
+    <div class="pc-open"><b>Click</b> to open</div>`;
+}
+
+function projectDetail(p) {
+  const links = [p.code && `<a class="btn" href="${p.code}" target="_blank" rel="noopener">View code</a>`, p.live && `<a class="btn" href="${p.live}" target="_blank" rel="noopener">Live demo</a>`].filter(Boolean).join(" ");
+  return `<div class="pdetail">
+    <div class="pd-hex"><span class="hexb lg"><span class="hexi">${iconSVG(p.icon)}</span></span></div>
+    <div class="pd-info">
+      <div class="pd-kind">${p.kind} · ${p.year}</div>
+      <h2 class="pd-title">${p.title}</h2>
+      <p class="lead">${p.summary}</p>
+      ${p.details.map((t) => `<p>${t}</p>`).join("")}
+      <ul class="chips">${p.tags.map((t) => `<li>${t}</li>`).join("")}</ul>
+      <div class="pd-links">${links}</div>
+    </div>
+  </div>`;
+}
+
+let projectView = null; // null (not on projects), "" (tree) or a project slug
+function renderProjects(sub) {
+  const p = PROJECTS.find((q) => q.slug === sub);
+  const prev = projectView;
+  const fromRect = (() => {
+    const el = p ? pBody.querySelector(`.pnode[data-p="${p.slug}"] .hexb`) : pBody.querySelector(".pd-hex .hexb");
+    return el ? el.getBoundingClientRect() : null;
+  })();
+  projectView = p ? p.slug : "";
+  pBody.classList.add("bare");
+  pBody.innerHTML = p ? projectDetail(p) : projectsTree();
+  pSub.textContent = p ? `Project · ${p.title}` : SECTIONS[current].sub;
+  fitTitle();
+
+  if (p) {
+    // fly the clicked hexagon to the top left, growing as it goes
+    const target = pBody.querySelector(".pd-hex .hexb");
+    if (fromRect && prev === "") flyHex(fromRect, target, p);
+    pBody.querySelector(".pd-info").animate([{ opacity: 0, transform: "translateX(24px)" }, { opacity: 1, transform: "none" }], { duration: 420, delay: 180, easing: "cubic-bezier(.2,.8,.2,1)", fill: "backwards" });
+    return;
+  }
+  // tree: wire up hover / click
+  const card = pBody.querySelector(".pcard");
+  const setHover = (k) => {
+    pBody.querySelectorAll(".pnode, .pitem").forEach((el) => el.classList.toggle("on", +el.dataset.k === k));
+    card.innerHTML = k >= 0 ? projectCard(PROJECTS[k]) : "";
+    card.classList.toggle("show", k >= 0);
+  };
+  pBody.querySelectorAll(".pnode, .pitem").forEach((el) => {
+    el.addEventListener("mouseenter", () => setHover(+el.dataset.k));
+    el.addEventListener("focus", () => setHover(+el.dataset.k));
+    el.addEventListener("click", () => (location.hash = `#/projects/${el.dataset.p}`));
+  });
+  pBody.querySelectorAll(".pitem").forEach((el) => (el.style.setProperty("--splash", `url(${splashURL(COLORS[current % COLORS.length])})`)));
+  setHover(0);
+  // coming back from a project: fly its hexagon home
+  if (prev && fromRect) {
+    const k = PROJECTS.findIndex((q) => q.slug === prev);
+    const target = pBody.querySelector(`.pnode[data-k="${k}"] .hexb`);
+    if (target) { flyHex(fromRect, target, PROJECTS[k]); setHover(k); }
+  }
+}
+
+function flyHex(from, targetEl, p) {
+  const to = targetEl.getBoundingClientRect();
+  const ghost = document.createElement("span");
+  ghost.className = "hexb hex-ghost";
+  ghost.innerHTML = `<span class="hexi">${iconSVG(p.icon)}</span>`;
+  Object.assign(ghost.style, { left: to.left + "px", top: to.top + "px", width: to.width + "px", height: to.height + "px" });
+  document.body.appendChild(ghost);
+  targetEl.style.visibility = "hidden";
+  const sx = from.width / to.width, dx = from.left - to.left, dy = from.top - to.top;
+  ghost.animate([
+    { transform: `translate(${dx}px, ${dy}px) scale(${sx})` },
+    { transform: `translate(${dx * 0.35}px, ${dy * 0.35}px) scale(${sx + (1 - sx) * 0.4 + 0.12})`, offset: 0.55 },
+    { transform: "none" },
+  ], { duration: 520, easing: "cubic-bezier(.3,.7,.2,1)" }).onfinish = () => { targetEl.style.visibility = ""; ghost.remove(); };
+}
 
 /* =========================================================
    Content helpers
@@ -525,7 +724,7 @@ window.addEventListener("pointermove", (e) => {
 });
 window.addEventListener("click", (e) => {
   if (isOpen() || transitioning || !ITEMS.length) return;
-  if (e.target.closest(".nameplate, .hints")) return;
+  if (e.target.closest(".nameplate, .hints, .panel, button")) return;
   const [x, y] = toMenu(e);
   // Open whatever is highlighted under the cursor (touch: whatever was tapped).
   const i = hovering || (ITEMS[active] && bandScore(ITEMS[active], x, y, 0.55) < Infinity) ? active : hitTest(x, y);
@@ -550,9 +749,11 @@ dots.addEventListener("click", (e) => {
   if (b) goTo(SECTIONS[+b.dataset.i].id);
 });
 
-function openSection(id) {
+function openSection(id, sub = "") {
   const i = SECTIONS.findIndex((s) => s.id === id);
   if (i < 0) return closeSection(false);
+  // moving inside the projects section (tree <-> a project): no full page change
+  if (id === "projects" && isOpen() && i === current && projectView !== null) { renderProjects(sub); return; }
   const sec = SECTIONS[i];
   const back = current >= 0 && (i - current + SECTIONS.length) % SECTIONS.length > SECTIONS.length / 2;
   current = i;
@@ -564,6 +765,7 @@ function openSection(id) {
   pBody.className = "panel-body";
   void pBody.offsetWidth; // restart the slide animation
   pBody.className = "panel-body" + (back ? " from-left" : "");
+  projectView = null;
   pBody.innerHTML = sec.html();
   pBody.scrollTop = 0;
   document.getElementById("prev-label").textContent = SECTIONS[(i - 1 + SECTIONS.length) % SECTIONS.length].label;
@@ -578,6 +780,8 @@ function openSection(id) {
   const col = COLORS[i % COLORS.length];
   document.documentElement.style.setProperty("--purple", col);
   pSplat.querySelector("img").src = splashURL(col);
+  hovering = false;                        // the menu is hidden: forget what was under the pointer
+  if (id === "projects") { projectView = ""; renderProjects(sub); }
   const form = document.getElementById("contact-form");
   if (form) form.addEventListener("submit", (e) => {
     e.preventDefault();
@@ -654,7 +858,12 @@ function closeSection(updateHash = true) {
   panel.setAttribute("aria-hidden", "true");
   current = -1;
   if (ITEMS.length) startStroke();
-  if (updateHash && location.hash) history.pushState("", document.title, location.pathname + location.search);
+  projectView = null;
+  hovering = false;
+  if (updateHash && location.hash) {
+    try { history.pushState("", document.title, location.pathname + location.search); }
+    catch (err) { location.hash = ""; }    // opened as a local file: pushState is not allowed there
+  }
 }
 
 // Q / E: previous / next section (inside a page), or move the menu selection.
@@ -666,11 +875,17 @@ function step(d) {
 }
 
 function route() {
-  const m = location.hash.match(/^#\/([\w-]+)/);
-  m ? openSection(m[1]) : closeSection(false);
+  const m = location.hash.match(/^#\/([\w-]+)(?:\/([\w-]+))?/);
+  m ? openSection(m[1], m[2] || "") : closeSection(false);
 }
 window.addEventListener("hashchange", route);
-document.getElementById("back").addEventListener("click", () => closeSection());
+// Esc / Back: from a project page go back to the projects tree, otherwise back to the main menu.
+function goBack() {
+  if (transitioning) return;
+  if (projectView) location.hash = "#/projects";
+  else closeSection();
+}
+document.getElementById("back").addEventListener("click", (e) => { e.stopPropagation(); goBack(); });
 document.getElementById("prev").addEventListener("click", () => step(-1));
 document.getElementById("next").addEventListener("click", () => step(1));
 
@@ -681,7 +896,7 @@ document.addEventListener("keydown", (e) => {
   const k = e.key.toLowerCase();
   if (k === "q") { e.preventDefault(); step(-1); return; }
   if (k === "e") { e.preventDefault(); step(1); return; }
-  if (e.key === "Escape" && isOpen()) { e.preventDefault(); closeSection(); return; }
+  if (e.key === "Escape" && isOpen()) { e.preventDefault(); goBack(); return; }
   if (isOpen()) return;
   if (e.key === "ArrowDown" || e.key === "ArrowRight") { e.preventDefault(); setActive(active + 1); }
   else if (e.key === "ArrowUp" || e.key === "ArrowLeft") { e.preventDefault(); setActive(active - 1); }
