@@ -211,20 +211,41 @@ const GAP = 0.13;            // how far neighbours move apart, as a fraction of 
    with a 235 px tall first capital. The splash is bent along each word's own baseline, extended back
    to the left edge of the screen, and painted in with a single brush stroke. */
 const SPLAT = { w: 1616, h: 1337, ax: 495, ay: 685, ang: 4.3, len: 960, cap: 235 };
+/* The splash "boils" like the reference: its core stays put while its edges and drips change shape
+   about 14 times a second, in steps (assets/splat0-5.png are edge variations of the same splash). */
+const BOIL_MS = 70;
+const FLATS = [];
 const FLAT = { canvas: null, ax: 0, ay: 0, w: 0, h: 0 };
-const splatImg = new Image();
-splatImg.onload = () => {
+function flatten(img) {
   // Pre-rotate the splash so its baseline is horizontal; that makes bending it along a curve simple.
   const pad = 160, c = document.createElement("canvas");
   c.width = SPLAT.w + pad * 2; c.height = SPLAT.h + pad * 2;
   const g = c.getContext("2d");
   g.translate(SPLAT.ax + pad, SPLAT.ay + pad);
   g.rotate((-SPLAT.ang * Math.PI) / 180);
-  g.drawImage(splatImg, -SPLAT.ax, -SPLAT.ay);
-  Object.assign(FLAT, { canvas: c, ax: SPLAT.ax + pad, ay: SPLAT.ay + pad, w: c.width, h: c.height });
-  startStroke(true);
-};
-splatImg.src = "assets/splat.png";
+  g.drawImage(img, -SPLAT.ax, -SPLAT.ay);
+  return c;
+}
+for (let v = 0; v < 6; v++) {
+  const img = new Image();
+  img.onload = () => {
+    FLATS[v] = flatten(img);
+    if (!FLAT.canvas) {
+      Object.assign(FLAT, { canvas: FLATS[v], ax: SPLAT.ax + 160, ay: SPLAT.ay + 160, w: SPLAT.w + 320, h: SPLAT.h + 320 });
+      startStroke(true);
+    }
+  };
+  img.src = `assets/splat${v}.png`;
+}
+let boilIdx = 0, boilStep = -1;
+function boilFrame(now) {
+  const step = Math.floor(now / BOIL_MS);
+  if (step !== boilStep) {
+    boilStep = step;
+    const ready = FLATS.filter(Boolean);
+    if (ready.length > 1) { let n; do { n = Math.floor(Math.random() * ready.length); } while (ready[n] === FLAT.canvas); FLAT.canvas = ready[n]; }
+  }
+}
 
 let ITEMS = []; // { el, tagEl, geo, slot, capLen, origin, dx, dy, scale }
 
@@ -335,6 +356,7 @@ function frame(now) {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   const it = ITEMS[stroke.item];
   if (!it || !FLAT.canvas || isOpen()) return;
+  boilFrame(now);
   const dur = 460;
   const p = Math.min(1, (now - stroke.t0) / dur);
   const e = easeOut(p);
@@ -373,7 +395,7 @@ function frame(now) {
     ctx.drawImage(FLAT.canvas, u, 0, Math.max(1, du), FLAT.h, 0, -FLAT.ay * ky, ds + 0.9, FLAT.h * ky);
     ctx.restore();
   }
-  if (p < 1 || (now - stroke.t0) < 340) raf = requestAnimationFrame(frame);
+  raf = requestAnimationFrame(frame); // keep boiling while the menu is visible
 }
 
 function resizeCanvas() {
@@ -492,7 +514,12 @@ const pSplat = panel.querySelector(".panel-splat");
 const dots = document.getElementById("tab-dots");
 let current = -1;
 
-pSplat.innerHTML = `<img src="assets/splat.png" alt="" />`;
+pSplat.innerHTML = `<img src="assets/splat0.png" alt="" />`;
+// the title splash boils too, by swapping between the same edge variations
+setInterval(() => {
+  if (!isOpen()) return;
+  pSplat.querySelector("img").src = `assets/splat${Math.floor(Math.random() * 6)}.png`;
+}, BOIL_MS);
 dots.innerHTML = SECTIONS.map((s, i) => `<button type="button" aria-label="${s.label}" data-i="${i}"></button>`).join("");
 dots.addEventListener("click", (e) => {
   const b = e.target.closest("button");
