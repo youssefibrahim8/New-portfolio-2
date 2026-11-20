@@ -513,7 +513,7 @@ const toMenu = (e) => [(e.clientX - MX) / MS, (e.clientY - MY) / MS];
 let hovering = false;
 
 window.addEventListener("pointermove", (e) => {
-  if (isOpen() || !ITEMS.length) return;
+  if (isOpen() || transitioning || !ITEMS.length) return;
   const [x, y] = toMenu(e);
   // Keep the current selection while the pointer is still on it (its hitbox grew with it),
   // so the words moving apart never makes the selection flicker.
@@ -524,12 +524,12 @@ window.addEventListener("pointermove", (e) => {
   if (i >= 0 && i !== active) setActive(i);
 });
 window.addEventListener("click", (e) => {
-  if (isOpen() || !ITEMS.length) return;
+  if (isOpen() || transitioning || !ITEMS.length) return;
   if (e.target.closest(".nameplate, .hints")) return;
   const [x, y] = toMenu(e);
   // Open whatever is highlighted under the cursor (touch: whatever was tapped).
   const i = hovering || (ITEMS[active] && bandScore(ITEMS[active], x, y, 0.55) < Infinity) ? active : hitTest(x, y);
-  if (i >= 0) { e.preventDefault(); location.hash = `#/${SECTIONS[i].id}`; }
+  if (i >= 0) { e.preventDefault(); goTo(SECTIONS[i].id); }
 });
 
 /* =========================================================
@@ -559,6 +559,7 @@ function openSection(id) {
   setActive(i);
   pTitle.innerHTML = `${sec.label[0].toUpperCase()}<span class="small">${sec.label.slice(1).toUpperCase()}</span>`;
   pSub.textContent = sec.sub;
+  if (!document.body.classList.contains("wiping")) panel.classList.remove("no-anim");
   pBody.className = "panel-body";
   void pBody.offsetWidth; // restart the slide animation
   pBody.className = "panel-body" + (back ? " from-left" : "");
@@ -648,7 +649,7 @@ document.addEventListener("keydown", (e) => {
   if (isOpen()) return;
   if (e.key === "ArrowDown" || e.key === "ArrowRight") { e.preventDefault(); setActive(active + 1); }
   else if (e.key === "ArrowUp" || e.key === "ArrowLeft") { e.preventDefault(); setActive(active - 1); }
-  else if (e.key === "Enter") { e.preventDefault(); location.hash = `#/${SECTIONS[active].id}`; }
+  else if (e.key === "Enter") { e.preventDefault(); goTo(SECTIONS[active].id); }
 });
 
 /* =========================================================
@@ -687,6 +688,215 @@ function layout() {
 
 window.addEventListener("resize", layout);
 layout();
+
+
+/* =========================================================
+   Menu -> page transition, copied frame by frame from the reference video (30 fps):
+     0-60 ms    random letters drop out, the splash breaks into chunks, the name plate streaks away
+     60-200     the remaining letters scatter as faint ghosts, the character darkens and fades
+     200-270    only the background is left, with a pale brush streak across the lower left
+     270-420    a wide white slanted band sweeps in from the left; the new page is behind it, and
+                ahead of it the old background peels away in chips
+     420-500    the band collapses into a thin line and fades
+     500-650    the title splash paints in
+   ========================================================= */
+const fx = document.createElement("canvas");
+fx.className = "fx";
+document.body.appendChild(fx);
+const fxc = fx.getContext("2d");
+let transitioning = false;
+
+// Horizontal "peeling paint" noise (640x360), reused for the splash break-up and the chip reveal.
+const CHIP = (() => {
+  const W = 640, H = 360, c = document.createElement("canvas");
+  c.width = W; c.height = H;
+  const g = c.getContext("2d");
+  const layer = (cols, rows, alpha, seed) => {
+    const t = document.createElement("canvas"); t.width = cols; t.height = rows;
+    const tg = t.getContext("2d"), d = tg.createImageData(cols, rows), R = rng(seed);
+    for (let k = 0; k < cols * rows; k++) { const v = R() * 255; d.data.set([v, v, v, 255], k * 4); }
+    tg.putImageData(d, 0, 0);
+    g.globalAlpha = alpha; g.imageSmoothingEnabled = true; g.drawImage(t, 0, 0, W, H);
+  };
+  g.fillStyle = "#808080"; g.fillRect(0, 0, W, H);
+  layer(14, 90, 1, 11); layer(40, 220, 0.55, 12); layer(120, 360, 0.3, 13);
+  const src = g.getImageData(0, 0, W, H).data, n = new Uint8Array(W * H);
+  for (let k = 0; k < W * H; k++) n[k] = src[k * 4];
+  // stretch the values to the full 0-255 range
+  let lo = 255, hi = 0; n.forEach((v) => { lo = Math.min(lo, v); hi = Math.max(hi, v); });
+  for (let k = 0; k < n.length; k++) n[k] = ((n[k] - lo) * 255) / (hi - lo);
+  const out = document.createElement("canvas"); out.width = W; out.height = H;
+  return { W, H, n, out, og: out.getContext("2d"), img: null };
+})();
+// Draw a mask where `coverage` (0-1) of the area is solid, as horizontal paint chips.
+function chipMask(coverage) {
+  const { W, H, n, og } = CHIP;
+  if (!CHIP.img) CHIP.img = og.createImageData(W, H);
+  const d = CHIP.img.data, th = coverage * 255;
+  for (let k = 0; k < W * H; k++) d[k * 4 + 3] = n[k] < th ? 255 : 0;
+  og.putImageData(CHIP.img, 0, 0);
+  return CHIP.out;
+}
+
+const bgImg = new Image();
+bgImg.src = "assets/background.jpg";
+function drawCover(g, img, W, H) {
+  const s = Math.max(W / img.naturalWidth, H / img.naturalHeight);
+  const w = img.naturalWidth * s, h = img.naturalHeight * s;
+  g.drawImage(img, (W - w) / 2, (H - h) / 2, w, h);
+}
+
+const lerpKeys = (keys, t) => {
+  if (t <= keys[0][0]) return keys[0][1];
+  for (let k = 1; k < keys.length; k++) if (t <= keys[k][0]) {
+    const [t0, v0] = keys[k - 1], [t1, v1] = keys[k];
+    return v0 + ((v1 - v0) * (t - t0)) / (t1 - t0);
+  }
+  return keys[keys.length - 1][1];
+};
+
+function goTo(id) {
+  if (transitioning) return;
+  const idx = SECTIONS.findIndex((s) => s.id === id);
+  if (idx < 0) return;
+  transitioning = true;
+  document.body.classList.remove("hovering");
+  const dpr = window.devicePixelRatio || 1, VW = window.innerWidth, VH = window.innerHeight;
+  fx.width = Math.round(VW * dpr); fx.height = Math.round(VH * dpr);
+  const hero = document.querySelector(".hero"), plate = document.querySelector(".nameplate");
+  const hints = document.querySelector(".hints"), linesEl = document.querySelector(".lines");
+
+  // Letters: some drop out at random in the first 60 ms, the rest scatter as ghosts.
+  const R = rng(Date.now() & 0xffff);
+  const glyphs = [];
+  ITEMS.forEach((it, j) => {
+    it.el.querySelectorAll("a text").forEach((t) => {
+      const sel = j === idx;
+      glyphs.push({
+        t, base: t.getAttribute("transform"),
+        drop: R() < (sel ? 0.8 : 0.45) ? R() * 60 : Infinity,
+        dx: (R() - 0.65) * 90, dy: (R() - 0.3) * 70, rot: (R() - 0.5) * 50, sc: 1 + R() * 0.7,
+        ghost: R() < 0.4,
+      });
+    });
+  });
+
+  // Splash: freeze it fully painted so it can break apart.
+  stroke.t0 = performance.now() - 1e4;
+  frame(performance.now());
+  const splashSnap = document.createElement("canvas");
+  splashSnap.width = canvas.width; splashSnap.height = canvas.height;
+  splashSnap.getContext("2d").drawImage(canvas, 0, 0);
+  const streakCol = tinted("#d9f3f2");
+
+  let opened = false;
+  const t0 = performance.now();
+  function step(now) {
+    const t = now - t0;
+    // ---- letters ----
+    if (t < 260) glyphs.forEach((G) => {
+      if (t >= G.drop) { G.t.style.opacity = 0; return; }
+      const k = Math.max(0, Math.min(1, (t - 45) / 170));
+      if (k > 0) {
+        const e = 1 - Math.pow(1 - k, 2);
+        G.t.setAttribute("transform", `${G.base} translate(${(G.dx * e).toFixed(1)},${(G.dy * e).toFixed(1)}) rotate(${(G.rot * e).toFixed(1)}) scale(${1 + (G.sc - 1) * e})`);
+        G.t.style.opacity = (G.ghost ? 0.55 : 1) * (1 - k);
+      }
+    });
+    ITEMS.forEach((it) => (it.tagEl.style.opacity = t > 35 ? 0 : 1));
+    // ---- splash breaking into chunks (0-95 ms) ----
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (t < 95) {
+      ctx.globalCompositeOperation = "source-over";
+      ctx.drawImage(splashSnap, 0, 0);
+      ctx.globalCompositeOperation = "destination-out";
+      ctx.drawImage(chipMask(Math.min(1, t / 85)), 0, 0, canvas.width, canvas.height);
+      ctx.globalCompositeOperation = "source-over";
+    }
+    // ---- name plate / hints streak away, lines and character fade ----
+    const pk = Math.min(1, t / 90);
+    [plate, hints].forEach((el) => {
+      el.style.transform = `translateX(${-30 * pk}px) scaleX(${1 + 0.8 * pk}) skewX(-20deg)`;
+      el.style.filter = `brightness(${1 + 3 * pk}) blur(${2 * pk}px)`;
+      el.style.opacity = 1 - pk;
+    });
+    linesEl.style.opacity = 1 - Math.min(1, t / 140);
+    if (!opened) {
+      const hk = Math.max(0, Math.min(1, (t - 90) / 120));
+      hero.style.opacity = 1 - hk;
+      hero.style.filter = `brightness(${1 - 0.5 * hk}) saturate(${1 - 0.4 * hk}) blur(${2 * hk}px)`;
+    }
+
+    // ---- overlay canvas ----
+    fxc.setTransform(dpr, 0, 0, dpr, 0, 0);
+    fxc.clearRect(0, 0, VW, VH);
+    // teal darkening while the menu dissolves
+    const dark = lerpKeys([[70, 0], [180, 0.38], [270, 0.3], [300, 0]], t);
+    if (dark > 0 && t < 270) { fxc.fillStyle = `rgba(8, 34, 40, ${dark})`; fxc.fillRect(0, 0, VW, VH); }
+    // pale brush streak across the lower left
+    if (t > 160 && t < 290 && FLAT.canvas) {
+      const k = (t - 160) / 130;
+      fxc.save();
+      fxc.globalAlpha = 0.6 * Math.sin(Math.PI * k);
+      fxc.translate(VW * (0.14 - 0.05 * k), VH * (0.62 + 0.12 * k));
+      fxc.rotate(-1.05);
+      const w = VH * 0.75, h = w * (FLAT.h / FLAT.w) * 0.5;
+      fxc.drawImage(streakCol, -w * 0.3, -h / 2, w, h);
+      fxc.restore();
+    }
+    // ---- white slanted band + chip reveal (270-500 ms) ----
+    if (t >= 270) {
+      if (!opened) {
+        opened = true;
+        document.body.classList.add("wiping");
+        hero.style.opacity = 0;
+        location.hash = `#/${id}`;                  // the new page is now underneath
+      }
+      const slant = VH * 0.53;                       // the band leans like the reference: x shifts by this from bottom to top
+      const R0 = lerpKeys([[270, 0.21], [303, 0.28], [336, 0.8], [370, 0.82], [403, 0.66], [436, 0.65]], t) * VW;
+      const L0 = lerpKeys([[270, -0.6], [303, -0.3], [336, 0.33], [370, 0.44], [403, 0.625], [436, 0.635]], t) * VW;
+      // old background still showing right of the band, peeling away in chips
+      if (t < 420 && bgImg.complete) {
+        fxc.save();
+        fxc.beginPath();
+        fxc.moveTo(R0, 0); fxc.lineTo(VW, 0); fxc.lineTo(VW, VH); fxc.lineTo(R0 - slant, VH); fxc.closePath();
+        fxc.clip();
+        drawCover(fxc, bgImg, VW, VH);
+        fxc.fillStyle = "rgba(8, 34, 40, 0.3)"; fxc.fillRect(0, 0, VW, VH);
+        fxc.globalCompositeOperation = "destination-out";
+        fxc.drawImage(chipMask(lerpKeys([[270, 0.12], [303, 0.42], [336, 0.6], [370, 0.75], [420, 1]], t)), 0, 0, VW, VH);
+        fxc.restore();
+      }
+      // the white band
+      const a = lerpKeys([[400, 1], [500, 0]], t);
+      if (a > 0) {
+        fxc.fillStyle = `rgba(250, 250, 248, ${a})`;
+        fxc.beginPath();
+        fxc.moveTo(L0, 0); fxc.lineTo(R0, 0); fxc.lineTo(R0 - slant, VH); fxc.lineTo(L0 - slant, VH); fxc.closePath();
+        fxc.fill();
+      }
+    }
+    if (t < 520) { requestAnimationFrame(step); return; }
+
+    // ---- finish ----
+    fxc.setTransform(1, 0, 0, 1, 0, 0);
+    fxc.clearRect(0, 0, fx.width, fx.height);
+    glyphs.forEach((G) => { G.t.setAttribute("transform", G.base); G.t.style.opacity = ""; });
+    [plate, hints].forEach((el) => { el.style.transform = el.style.filter = el.style.opacity = ""; });
+    linesEl.style.opacity = "";
+    hero.style.transition = "opacity .35s ease";
+    hero.style.filter = "";
+    hero.style.opacity = "";
+    setTimeout(() => (hero.style.transition = ""), 400);
+    ITEMS.forEach((it) => (it.tagEl.style.opacity = ""));
+    panel.classList.add("no-anim");        // the page is already in place: don't replay its entrance
+    document.body.classList.remove("wiping");
+    pSplat.classList.remove("paint-in"); void pSplat.offsetWidth; pSplat.classList.add("paint-in");
+    transitioning = false;
+  }
+  requestAnimationFrame(step);
+}
 
 // Build the menu once the display font is ready (its metrics size every word).
 (document.fonts && document.fonts.load ? Promise.all([document.fonts.load('400 100px "Abril Fatface"'), document.fonts.load('900 100px "Playfair Display SC"')]) : Promise.resolve())

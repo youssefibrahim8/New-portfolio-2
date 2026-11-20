@@ -441,3 +441,11 @@ body.open .panel { pointer-events: auto; opacity: 1; visibility: visible; transi
 @media (prefers-reduced-motion: reduce) {
   .hero-float, .eye > span { animation: none !important; }
 }
+
+/* ---------- Menu -> page transition ---------- */
+.fx { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 20; pointer-events: none; }
+body.wiping .panel, body.wiping .panel * { transition: none !important; animation: none !important; }
+body.wiping .panel-splat { opacity: 0; }
+.panel.no-anim .panel-body, .panel.no-anim .meter .fill { animation: none !important; }
+.panel-splat.paint-in img { animation: paintIn .16s cubic-bezier(.3, .7, .3, 1) both; }
+@keyframes paintIn { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
