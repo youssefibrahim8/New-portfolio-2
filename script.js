@@ -181,8 +181,8 @@ function pbgFit() {
     const s = Math.max(W / PBG.w, H / PBG.h);
     return { s, ox: (W - PBG.w * s) / 2, oy: (H - PBG.h * s) / 2 };
   }
-  const s = Math.min((H * 0.34) / 452, W / 330);   // the project hexagons span 452 px of the image vertically
-  return { s, ox: W / 2 - 825 * s, oy: H * 0.89 - 746 * s };
+  const s = Math.min((H * 0.4) / 452, W / 300);   // the project hexagons span 452 px of the image vertically
+  return { s, ox: W / 2 - 825 * s, oy: H * 0.55 - 520 * s };
 }
 function placeNodes() {
   const { s, ox, oy } = pbgFit();
@@ -194,17 +194,9 @@ function placeNodes() {
 }
 window.addEventListener("resize", placeNodes);
 
+// The tree screen is just the artwork and its hexagons (the buttons live in .pnodes, over everything).
 function projectsTree() {
-  const list = PROJECTS.map((p, k) =>
-    `<li><button type="button" class="pitem" data-p="${p.slug}" data-k="${k}"><span class="pn">${p.title}</span><span class="py"><small>YR.</small>${p.year}</span></button></li>`).join("");
-  return `<div class="ptree">
-    <div class="pside">
-      <p class="pprompt">Which project will you open?</p>
-      <ul class="plist">${list}</ul>
-    </div>
-    <div></div>
-    <aside class="pcard" aria-live="polite"></aside>
-  </div>`;
+  return `<div class="ptree"></div>`;
 }
 
 // Projects mode: artwork background on, character / lines off. Hexagon buttons only on the tree.
@@ -213,13 +205,6 @@ function setProjectsMode(on, tree) {
   if (on) placeNodes();
   document.body.classList.toggle("ptree-on", on && tree);
   if (!on || !tree) pnodes.innerHTML = "";
-}
-
-function projectCard(p) {
-  return `<div class="pc-head"><span class="hexb sm"><span class="hexi">${iconSVG(p.icon)}</span></span>
-      <div><div class="pc-title">${p.title}</div><div class="pc-kind">${p.kind} <b>${p.year}</b></div></div></div>
-    <p>${p.summary}</p>
-    <div class="pc-open"><b>Click</b> to open</div>`;
 }
 
 function projectDetail(p) {
@@ -250,7 +235,7 @@ function renderProjects(sub) {
   pBody.innerHTML = p ? projectDetail(p) : projectsTree();
   setProjectsMode(true, !p);
   if (!p) {
-    pnodes.innerHTML = PROJECTS.map((q, k) => `<button class="pnode" type="button" data-p="${q.slug}" data-k="${k}" aria-label="${q.title}"><span class="hexring"></span></button>`).join("");
+    pnodes.innerHTML = PROJECTS.map((q, k) => `<button class="pnode" type="button" data-p="${q.slug}" data-k="${k}" aria-label="${q.title}" title="${q.title}"><span class="hexring"></span></button>`).join("");
     placeNodes();
   }
   pSub.textContent = p ? `Project · ${p.title}` : SECTIONS[current].sub;
@@ -263,25 +248,13 @@ function renderProjects(sub) {
     pBody.querySelector(".pd-info").animate([{ opacity: 0, transform: "translateX(24px)" }, { opacity: 1, transform: "none" }], { duration: 420, delay: 180, easing: "cubic-bezier(.2,.8,.2,1)", fill: "backwards" });
     return;
   }
-  // tree: wire up hover / click
-  const card = pBody.querySelector(".pcard");
-  const setHover = (k) => {
-    document.querySelectorAll(".pnode, .pitem").forEach((el) => el.classList.toggle("on", +el.dataset.k === k));
-    card.innerHTML = k >= 0 ? projectCard(PROJECTS[k]) : "";
-    card.classList.toggle("show", k >= 0);
-  };
-  document.querySelectorAll(".pnode, .pitem").forEach((el) => {
-    el.addEventListener("mouseenter", () => setHover(+el.dataset.k));
-    el.addEventListener("focus", () => setHover(+el.dataset.k));
-    el.addEventListener("click", () => (location.hash = `#/projects/${el.dataset.p}`));
-  });
-  pBody.querySelectorAll(".pitem").forEach((el) => (el.style.setProperty("--splash", `url(${splashURL(COLORS[current % COLORS.length])})`)));
-  setHover(0);
+  // tree: clicking a hexagon opens its project
+  pnodes.querySelectorAll(".pnode").forEach((el) => el.addEventListener("click", () => (location.hash = `#/projects/${el.dataset.p}`)));
   // coming back from a project: fly its hexagon home
   if (prev && fromRect) {
     const k = PROJECTS.findIndex((q) => q.slug === prev);
     const target = pnodes.querySelector(`.pnode[data-k="${k}"]`);
-    if (target) { flyHex(fromRect, target, PROJECTS[k]); setHover(k); }
+    if (target) flyHex(fromRect, target, PROJECTS[k]);
   }
 }
 

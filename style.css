@@ -471,47 +471,7 @@ body.wiping .panel-splat { opacity: 0; }
   height: 100%;
 }
 .panel-body.bare::before { display: none; }
-.ptree {
-  display: grid;
-  grid-template-columns: minmax(220px, 24%) minmax(0, 1fr) minmax(220px, 24%);
-  gap: 1.5vw;
-  height: 100%;
-  min-height: 0;
-  align-items: center;
-}
-.pside { align-self: start; }
-.pprompt { position: relative; z-index: 1; font-family: var(--display); font-size: max(13px, 1.7vh); margin: 0 0 2.2vh !important; color: #fff; }
-.plist { list-style: none; margin: 0; padding: 0; display: grid; gap: .6vh; }
-.pitem {
-  position: relative;
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  width: 100%;
-  font: inherit;
-  color: #fff;
-  background: rgba(0, 0, 0, .55);
-  border: 0;
-  border-bottom: 1px solid rgba(255, 255, 255, .4);
-  padding: .55em .9em .45em 1em;
-  cursor: pointer;
-  text-align: left;
-  isolation: isolate;
-}
-.pitem .pn { font-family: var(--display); font-size: max(14px, 1.9vh); }
-.pitem .py { font-family: var(--heavy); font-size: max(18px, 2.8vh); line-height: 1; }
-.pitem .py small { font-family: var(--display); font-size: .4em; margin-right: .3em; vertical-align: middle; }
-.pitem::before {             /* the painted bar behind the selected row */
-  content: "";
-  position: absolute;
-  inset: -22% -18% -22% -40%;
-  z-index: -1;
-  background: var(--splash) 0 55% / 100% 260% no-repeat;
-  clip-path: inset(0 100% 0 0);
-  transition: clip-path .28s cubic-bezier(.3, .7, .2, 1);
-}
-.pitem.on { background: transparent; }
-.pitem.on::before { clip-path: inset(0 0 0 0); }
+.ptree { height: 100%; }
 
 /* projects artwork background and its clickable hexagons */
 .pbg {
@@ -567,25 +527,6 @@ body:not(.ptree-on) .pnodes, body.wiping .pnodes { display: none; }
 .hexb.lg { width: min(19vh, 170px); }
 .hex-ghost { position: fixed; z-index: 30; pointer-events: none; transform-origin: 0 0; }
 
-.pcard {
-  align-self: center;
-  opacity: 0;
-  transform: translateX(14px);
-  transition: opacity .2s ease, transform .25s ease;
-  background: linear-gradient(100deg, rgba(10, 12, 16, .85), rgba(10, 12, 16, .55));
-  border-top: 1px solid rgba(255, 255, 255, .6);
-  border-bottom: 1px solid rgba(255, 255, 255, .6);
-  padding: 1.2em 1.2em 1em;
-}
-.pcard.show { opacity: 1; transform: none; }
-.pc-head { display: flex; gap: .9em; align-items: center; margin-bottom: .6em; }
-.pc-title { font-family: var(--display); font-weight: 700; font-size: max(17px, 2.4vh); line-height: 1.1; }
-.pc-kind { font-family: var(--display); font-size: .8em; letter-spacing: .12em; color: #d9d9d9; }
-.pc-kind b { font-family: var(--heavy); font-weight: 400; font-size: 1.5em; color: #fff; margin-left: .3em; }
-.pcard p { font-size: .9em; margin: 0 0 .8em !important; }
-.pc-open { font-family: var(--display); font-size: .78em; letter-spacing: .1em; color: #ddd; }
-.pc-open b { background: #fff; color: var(--ink); border-radius: 999px; padding: .05em .6em; margin-right: .3em; font-family: var(--body); }
-
 /* project page */
 .pdetail { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 3vw; align-items: start; height: 100%; }
 .pd-hex { padding-top: .5vh; }
@@ -606,9 +547,6 @@ body:not(.ptree-on) .pnodes, body.wiping .pnodes { display: none; }
 
 @media (max-width: 900px), (max-aspect-ratio: 1/1) {
   .panel-body.bare { overflow-y: auto; }
-  .ptree { grid-template-columns: 1fr; align-items: start; height: auto; }
-  .ptree > div:nth-child(2) { display: none; }
-  .pcard { display: none; }
   .pdetail { grid-template-columns: 1fr; height: auto; }
 }
 
@@ -617,6 +555,6 @@ body:not(.ptree-on) .pnodes, body.wiping .pnodes { display: none; }
 /* on the projects tree the page dots move to the bottom, off the artwork's top hexagon */
 body.ptree-on .tab-dots { position: fixed; left: 50%; bottom: 2.4vh; transform: translateX(-50%); }
 @media (max-aspect-ratio: 1/1) {
-  .pbg { -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 22%); mask-image: linear-gradient(to bottom, transparent 0, #000 22%); }
+  .pbg { -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 22%, #000 88%, transparent); mask-image: linear-gradient(to bottom, transparent 0, #000 22%, #000 88%, transparent); }
   body.ptree-on .tab-dots { bottom: auto; position: static; transform: none; }
 }
