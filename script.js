@@ -203,7 +203,11 @@ const ctx = canvas.getContext("2d");
 words.setAttribute("viewBox", "0 0 760 720");
 
 const FONT = '"Abril Fatface"';
-const HOVER_SCALE = 1.14;   // the selected word grows, like EQUIPMENT in the reference
+const HOVER_SCALE = 1.14;  // (kept for the first/last word nudge)
+const STRETCH_X = 1.55;     // the selected word gets much longer, growing to the left ...
+const STRETCH_Y = 1.2;      // ... and a bit taller, pinned at its right end
+// Splash colour for each option, in menu order (taken from the reference screenshots).
+const COLORS = ["#ab35b2", "#c62b8a", "#db2d4f", "#db4140", "#de621e", "#ceb003", "#a6b303", "#16a15e"];   // the selected word grows, like EQUIPMENT in the reference
 const GAP = 0.13;            // how far neighbours move apart, as a fraction of the selected word's cap height
 
 /* The hover splash is the exact shape and colour of the reference splash (assets/splat.png).
@@ -293,7 +297,7 @@ function buildMenu() {
     const origin = [mid.x + mid.ty * slot.sc * 0.5, mid.y - mid.tx * slot.sc * 0.5]; // grow from the word's centre
     [g, t].forEach((n) => (n.style.transformOrigin = `${origin[0].toFixed(1)}px ${origin[1].toFixed(1)}px`));
     g.querySelector("a").addEventListener("focus", () => setActive(i));
-    return { el: g, tagEl: t, geo, slot, capLen, origin, dx: 0, dy: 0, scale: 1 };
+    return { el: g, tagEl: t, geo, slot, capLen, origin, end: [end.x, end.y], endAng, dx: 0, dy: 0, sx: 1, sy: 1 };
   });
   setActive(active, true);
 }
@@ -341,10 +345,13 @@ function frame(now) {
 
   ctx.setTransform(dpr * MS, 0, 0, dpr * MS, dpr * MX, dpr * MY);
   // grow with the word (same timing as its CSS transition)
-  const sc = 1 + (HOVER_SCALE - 1) * Math.min(1, easeOut(Math.min(1, (now - stroke.t0) / 320)));
   const kT = Math.min(1, easeOut(Math.min(1, (now - stroke.t0) / 320)));
+  const ang = (it.endAng * Math.PI) / 180;
   ctx.translate(it.dx * kT, it.dy * kT);
-  ctx.translate(it.origin[0], it.origin[1]); ctx.scale(sc, sc); ctx.translate(-it.origin[0], -it.origin[1]);
+  ctx.translate(it.end[0], it.end[1]); ctx.rotate(ang);
+  ctx.scale(1 + (it.sx - 1) * kT, 1 + (it.sy - 1) * kT);
+  ctx.rotate(-ang); ctx.translate(-it.end[0], -it.end[1]);
+  const src = tinted(COLORS[stroke.item % COLORS.length]);
 
   const geo = it.geo, kx = geo.len / SPLAT.len, ky = it.slot.cap / SPLAT.cap;
   // The stroke starts where the baseline leaves the left (or top) of the screen.
@@ -370,10 +377,23 @@ function frame(now) {
     ctx.rotate(Math.atan2(q.ty, q.tx));
     ctx.globalAlpha = p < 1 ? 0.5 + 0.5 * k : 1;
     ctx.scale(1, hScale);
-    ctx.drawImage(FLAT.canvas, u, 0, Math.max(1, du), FLAT.h, 0, -FLAT.ay * ky, ds + 0.9, FLAT.h * ky);
+    ctx.drawImage(src, u, 0, Math.max(1, du), FLAT.h, 0, -FLAT.ay * ky, ds + 0.9, FLAT.h * ky);
     ctx.restore();
   }
   if (p < 1 || (now - stroke.t0) < 340) raf = requestAnimationFrame(frame);
+}
+
+// The splash image recoloured for one option (cached).
+const TINTS = {};
+function tinted(color) {
+  if (TINTS[color]) return TINTS[color];
+  const c = document.createElement("canvas");
+  c.width = FLAT.w; c.height = FLAT.h;
+  const g = c.getContext("2d");
+  g.drawImage(FLAT.canvas, 0, 0);
+  g.globalCompositeOperation = "source-in";
+  g.fillStyle = color; g.fillRect(0, 0, c.width, c.height);
+  return (TINTS[color] = c);
 }
 
 function resizeCanvas() {
@@ -392,7 +412,12 @@ function resizeCanvas() {
 function bandScore(it, x, y, pad = 0) {
   // undo the word's current hover transform
   x -= it.dx; y -= it.dy;
-  if (it.scale !== 1) { x = it.origin[0] + (x - it.origin[0]) / it.scale; y = it.origin[1] + (y - it.origin[1]) / it.scale; }
+  if (it.sx !== 1 || it.sy !== 1) {
+    const a = (it.endAng * Math.PI) / 180, c = Math.cos(a), s = Math.sin(a);
+    const rx = x - it.end[0], ry = y - it.end[1];
+    const u = (rx * c + ry * s) / it.sx, v = (-rx * s + ry * c) / it.sy; // into the word's own axes, unstretch
+    x = it.end[0] + u * c - v * s; y = it.end[1] + u * s + v * c;
+  }
   const { pts, len } = it.geo;
   let bd = Infinity, bp = null, bs = 0;
   for (let k = 0; k < pts.length - 1; k++) {
@@ -423,6 +448,15 @@ function hitTest(x, y) {
 }
 
 let active = 0;
+
+// Where a point of an item ends up under that item's current transform (menu coordinates).
+function applyTf(it, x, y) {
+  const a = (it.endAng * Math.PI) / 180, c = Math.cos(a), sn = Math.sin(a);
+  const rx = x - it.end[0], ry = y - it.end[1];
+  const u = (rx * c + ry * sn) * it.sx, v = (-rx * sn + ry * c) * it.sy;
+  return [it.end[0] + u * c - v * sn + it.dx, it.end[1] + u * sn + v * c + it.dy];
+}
+
 function setActive(i, instant = false) {
   const prev = active;
   active = (i + SECTIONS.length) % SECTIONS.length;
@@ -431,26 +465,43 @@ function setActive(i, instant = false) {
     const on = j === active;
     it.el.classList.toggle("active", on);
     it.tagEl.classList.toggle("active", on);
-    // Open up space: the selected word grows, nearby words above move up and below move down
-    // (each along its own "up" direction, so the fan keeps its shape).
+    // Open up space: the selected word gets longer and taller; the whole group above moves up and the
+    // group below moves down (each word along its own "up" direction, so the fan keeps its shape).
     let dx = 0, dy = 0;
     if (A && !on) {
-      const d = Math.abs(j - active);
-      const fall = j < active ? 1 : -1; // the whole group above / below moves together, so nothing collides
       const p = it.geo.pts[Math.floor(it.geo.pts.length / 2)];
-      const dist = A.slot.cap * GAP * fall;
+      const dist = A.slot.cap * (j < active ? (STRETCH_Y - 1) + GAP : -GAP * 1.4);
       dx = p.ty * dist; dy = -p.tx * dist;
     }
-    if (on && (j === 0 || j === ITEMS.length - 1)) {
-      // the first / last word nudges inward as it grows, so it never leaves the screen
-      const p = it.geo.pts[Math.floor(it.geo.pts.length / 2)];
-      const dist = it.slot.cap * (HOVER_SCALE - 1) * 0.9 * (j === 0 ? -1 : 1);
-      dx = p.ty * dist; dy = -p.tx * dist;
-    }
-    it.dx = dx; it.dy = dy; it.scale = on ? HOVER_SCALE : 1;
-    const tf = `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px)` + (on ? ` scale(${HOVER_SCALE})` : "");
-    it.el.style.transform = tf;
-    it.tagEl.style.transform = tf;
+    it.dx = dx; it.dy = dy; it.sx = on ? STRETCH_X : 1; it.sy = on ? STRETCH_Y : 1;
+  });
+  // Then slide the whole fan up or down just enough that nothing leaves the top or bottom of the screen.
+  if (ITEMS.length) {
+    // Only the selected word must stay fully visible; far-away words may clip at the edge, like the reference.
+    let minY = Infinity, maxY = -Infinity;
+    [A].forEach((it) => {
+      for (let k = 0; k <= 20; k++) {
+        const q = pointAt(it.geo, (it.geo.len * k) / 20);
+        const top = k === 0 ? it.slot.cap : it.slot.sc;
+        for (const h of [-it.slot.sc * 0.14, top]) {
+          const y = applyTf(it, q.x + q.ty * h, q.y - q.tx * h)[1];
+          minY = Math.min(minY, y); maxY = Math.max(maxY, y);
+        }
+      }
+    });
+    const top = (6 - MY) / MS, bottom = (window.innerHeight - 40 - MY) / MS; // room for the label under the word
+    let cy = 0;
+    if (minY < top) cy = top - minY;
+    else if (maxY > bottom) cy = bottom - maxY;
+    if (maxY + cy > bottom && minY + cy >= top) cy = Math.max(top - minY, bottom - maxY);
+    ITEMS.forEach((it) => (it.dy += cy));
+  }
+  ITEMS.forEach((it) => {
+    // Same function list for every word, so CSS animates between states smoothly.
+    const [ex, ey] = it.end, a = it.endAng.toFixed(2), dx = it.dx.toFixed(1), dy = it.dy.toFixed(1);
+    it.el.style.transformOrigin = "0 0";
+    it.el.style.transform = `translate(${dx}px, ${dy}px) translate(${ex.toFixed(1)}px, ${ey.toFixed(1)}px) rotate(${a}deg) scale(${it.sx}, ${it.sy}) rotate(${-a}deg) translate(${-ex.toFixed(1)}px, ${-ey.toFixed(1)}px)`;
+    it.tagEl.style.transform = `translate(${dx}px, ${dy}px)`;
   });
   if (ITEMS.length && (prev !== active || instant)) startStroke(instant);
 }
@@ -521,6 +572,10 @@ function openSection(id) {
   panel.setAttribute("aria-hidden", "false");
   setTimeout(() => pBody.focus({ preventScroll: true }), 30);
   requestAnimationFrame(placePanelSplat);
+  // this section's colour: title splash, accents, bars and buttons
+  const col = COLORS[i % COLORS.length];
+  document.documentElement.style.setProperty("--purple", col);
+  pSplat.querySelector("img").src = splashURL(col);
   const form = document.getElementById("contact-form");
   if (form) form.addEventListener("submit", (e) => {
     e.preventDefault();
@@ -543,6 +598,20 @@ function placePanelSplat() {
   });
 }
 window.addEventListener("resize", () => isOpen() && placePanelSplat());
+
+// The un-rotated splash image recoloured, as an image URL (cached).
+const SPLASH_URLS = {};
+function splashURL(color) {
+  if (SPLASH_URLS[color]) return SPLASH_URLS[color];
+  if (!splatImg.complete || !splatImg.naturalWidth) return "assets/splat.png";
+  const c = document.createElement("canvas");
+  c.width = splatImg.naturalWidth; c.height = splatImg.naturalHeight;
+  const g = c.getContext("2d");
+  g.drawImage(splatImg, 0, 0);
+  g.globalCompositeOperation = "source-in";
+  g.fillStyle = color; g.fillRect(0, 0, c.width, c.height);
+  return (SPLASH_URLS[color] = c.toDataURL());
+}
 
 function closeSection(updateHash = true) {
   document.body.classList.remove("open");
