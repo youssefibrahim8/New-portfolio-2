@@ -108,9 +108,9 @@ const SECTIONS = [
    p0 = baseline start, a = angle (deg), len = word length, cap = first-letter height, sc = small-cap height.
    CALENDAR curves in the reference, so it uses a quadratic curve instead. */
 const SLOTS = [
-  { p0: [214, 92],  a: 24,    len: 345, cap: 118, sc: 74 },
+  { p0: [222, 104], a: 24,    len: 300, cap: 102, sc: 64 },
   { p0: [233, 268], a: 3,     len: 282, cap: 122, sc: 66 },
-  { p0: [40, 360],  a: -1,    len: 532, cap: 123, sc: 74, innerCap: 6 },
+  { p0: [40, 360],  a: -1,    len: 532, cap: 123, sc: 74 },
   { p0: [160, 480], a: -8.5,  len: 435, cap: 120, sc: 68 },
   { p0: [45, 678],  a: -21.5, len: 588, cap: 132, sc: 72 },
   { p0: [302, 662], a: -28,   len: 322, cap: 100, sc: 58 },
@@ -202,134 +202,125 @@ const splats = document.getElementById("splats");
 words.setAttribute("viewBox", "0 0 760 720");
 splats.setAttribute("viewBox", "0 0 760 720");
 
-let ITEMS = []; // { el, splat, geo, slot, capLen }
+const FONT = '"Abril Fatface"';
+const HOVER_SCALE = 1.18;   // the selected word grows, like EQUIPMENT in the reference
+const GAP = 0.34;           // how far neighbours move apart, as a fraction of the selected word's cap height
+
+/* The hover splatter is the exact shape and colour of the reference splash (assets/splat.png).
+   In that image the selected word's baseline starts at (495, 685), runs at 4.3° and is 960 px long,
+   with a 235 px tall first capital. Each word maps its own baseline onto that one. */
+const SPLAT = { w: 1616, h: 1337, ax: 495, ay: 685, ang: 4.3, len: 960, cap: 235 };
+
+let ITEMS = []; // { el, splat, geo, slot, capLen, origin, dx, dy, scale }
 
 function fontRatios() {
   const c = document.createElement("canvas").getContext("2d");
-  c.font = '900 200px "Playfair Display SC"';
+  c.font = `400 200px ${FONT}`;
   const cap = c.measureText("P").actualBoundingBoxAscent / 200;
-  const sc = c.measureText("x").actualBoundingBoxAscent / 200;
-  return { cap: cap || 0.71, sc: sc || 0.56, ctx: c };
-}
-
-// A rough brush-swipe polygon around a baseline. The SVG filter turns its edges into grungy paint.
-function splatPolygon(geo, slot, seed) {
-  const R = rng(seed);
-  const { pts } = geo;
-  const top = [], bot = [];
-  const ext0 = slot.cap * 1.9, ext1 = slot.cap * 0.95;
-  const first = pts[0], last = pts[pts.length - 1];
-  const N = 14;
-  for (let i = -3; i <= N + 3; i++) {
-    let x, y, p;
-    if (i < 0) { p = first; const k = (i / 3) * ext0; x = first.x + first.tx * k; y = first.y + first.ty * k; }
-    else if (i > N) { p = last; const k = ((i - N) / 3) * ext1; x = last.x + last.tx * k; y = last.y + last.ty * k; }
-    else { p = pts[Math.round((i / N) * (pts.length - 1))]; x = p.x; y = p.y; }
-    const ux = p.ty, uy = -p.tx; // toward the tops of the letters
-    const hT = slot.cap * (1.75 + (R() - 0.5) * 0.5);
-    const hB = slot.cap * (0.85 + (R() - 0.5) * 0.4);
-    top.push([x + ux * hT, y + uy * hT]);
-    bot.push([x - ux * hB, y - uy * hB]);
-  }
-  const all = top.concat(bot.reverse());
-  return "M" + all.map((q) => q[0].toFixed(1) + "," + q[1].toFixed(1)).join(" L") + "Z";
+  return { cap: cap || 0.72, ctx: c };
 }
 
 function buildMenu() {
   const F = fontRatios();
-  words.innerHTML = `<defs>${SECTIONS.map((_, i) => `<path id="bp${i}" />`).join("")}</defs>`;
+  words.innerHTML = "";
   splats.querySelectorAll(".splat").forEach((n) => n.remove());
   ITEMS = SECTIONS.map((sec, i) => {
     const slot = SLOTS[i];
     const geo = sampleSlot(slot);
-    words.querySelector(`#bp${i}`).setAttribute("d", pathD(geo.pts));
-
     const capFs = slot.cap / F.cap;
-    const scFs = slot.sc / F.sc;
+    const scFs = slot.sc / F.cap; // small caps are capitals set smaller
     const R = rng((i + 5) * 977);
 
-    // Natural widths, used to find where the big first letter ends (for hit testing).
-    F.ctx.font = `900 ${capFs}px "Playfair Display SC"`;
-    const wCap = F.ctx.measureText(sec.label[0]).width;
-    F.ctx.font = `900 ${scFs}px "Playfair Display SC"`;
-    const wRest = F.ctx.measureText(sec.label.slice(1).toLowerCase()).width;
-    const capLen = geo.len * (wCap / (wCap + wRest));
-
-    // Letters: big first capital, small caps for the rest. Each glyph is placed on the baseline
+    // Letters: big first capital, smaller capitals for the rest. Each glyph is placed on the baseline
     // individually and squeezed horizontally so the word spans exactly the reference length.
     const letters = [...sec.label].map((ch, k) => {
       const isCap = k === 0 || slot.innerCap === k;
       const fs = k === 0 ? capFs : isCap ? capFs * 0.82 : scFs * (0.97 + R() * 0.06);
-      const glyph = isCap ? ch.toUpperCase() : ch.toLowerCase();
-      F.ctx.font = `900 ${fs}px "Playfair Display SC"`;
+      const glyph = ch.toUpperCase();
+      F.ctx.font = `400 ${fs}px ${FONT}`;
       return { glyph, fs, adv: F.ctx.measureText(glyph).width, off: k ? (R() - 0.5) * slot.sc * 0.06 : 0, rot: k ? (R() - 0.5) * 3 : 0 };
     });
     const natural = letters.reduce((a, l) => a + l.adv, 0);
     const kx = geo.len / natural;
-    let sAcc = 0, spans = "";
+    const capLen = letters[0].adv * kx;
+    let sAcc = 0, glyphs = "";
     letters.forEach((l) => {
       const p = pointAt(geo, sAcc * kx);
       const ang = (Math.atan2(p.ty, p.tx) * 180) / Math.PI + l.rot;
-      const x = p.x + p.ty * l.off * -1, y = p.y - p.tx * l.off * -1;
-      spans += `<text font-size="${l.fs.toFixed(1)}" transform="translate(${x.toFixed(1)},${y.toFixed(1)}) rotate(${ang.toFixed(2)}) scale(${kx.toFixed(3)},1)">${l.glyph}</text>`;
+      const x = p.x - p.ty * l.off, y = p.y + p.tx * l.off;
+      glyphs += `<text font-size="${l.fs.toFixed(1)}" transform="translate(${x.toFixed(1)},${y.toFixed(1)}) rotate(${ang.toFixed(2)}) scale(${kx.toFixed(3)},1)">${l.glyph}</text>`;
       sAcc += l.adv;
     });
 
-    const g = document.createElementNS(NS, "g");
-    g.setAttribute("class", "word");
+    const first = geo.pts[0];
+    const startAng = (Math.atan2(first.ty, first.tx) * 180) / Math.PI;
     const end = geo.pts[geo.pts.length - 1];
     const endAng = (Math.atan2(end.ty, end.tx) * 180) / Math.PI;
-    const tagW = sec.tag.length * 9.2 + 26;
-    const tagX = -tagW * 0.35;
-    const ty0 = slot.sc * 0.18;
+    const tagW = sec.tag.length * 9.6 + 28;
+    const tagX = -tagW * 0.6;
+    const ty0 = slot.sc * 0.2;
+
+    const g = document.createElementNS(NS, "g");
+    g.setAttribute("class", "word");
     g.innerHTML = `
-      <a href="#/${sec.id}" aria-label="${sec.label}" data-i="${i}">
-        ${spans}
-      </a>
+      <a href="#/${sec.id}" aria-label="${sec.label}" data-i="${i}">${glyphs}</a>
       <g class="tag" transform="translate(${end.x.toFixed(1)},${end.y.toFixed(1)}) rotate(${endAng.toFixed(1)})">
-        <line x1="${(tagX - 50).toFixed(0)}" y1="${(ty0 + 30).toFixed(1)}" x2="${(tagX + tagW + 40).toFixed(0)}" y2="${(ty0 + 30).toFixed(1)}" />
-        <rect x="${tagX.toFixed(0)}" y="${ty0.toFixed(1)}" width="${tagW.toFixed(0)}" height="27" />
-        <text x="${(tagX + 13).toFixed(0)}" y="${(ty0 + 19.5).toFixed(1)}">${sec.tag}</text>
+        <rect x="${tagX.toFixed(0)}" y="${ty0.toFixed(1)}" width="${tagW.toFixed(0)}" height="28" transform="skewX(-8)" />
+        <text x="${(tagX + 12).toFixed(0)}" y="${(ty0 + 20.5).toFixed(1)}">${sec.tag}</text>
       </g>`;
     words.appendChild(g);
 
+    // Splatter: map the reference baseline onto this word's baseline (length -> x, cap height -> y).
+    const sx = geo.len / SPLAT.len, sy = slot.cap / SPLAT.cap;
     const sp = document.createElementNS(NS, "g");
     sp.setAttribute("class", "splat");
-    sp.innerHTML = `<path d="${splatPolygon(geo, slot, i + 11)}" fill="#000" filter="url(#paint)" />`;
+    sp.innerHTML = `<image href="assets/splat.png" width="${SPLAT.w}" height="${SPLAT.h}" preserveAspectRatio="none"
+      transform="translate(${first.x.toFixed(1)},${first.y.toFixed(1)}) rotate(${(startAng - SPLAT.ang).toFixed(2)}) scale(${sx.toFixed(4)},${sy.toFixed(4)}) translate(${-SPLAT.ax},${-SPLAT.ay})" />`;
     splats.appendChild(sp);
 
+    const mid = pointAt(geo, geo.len / 2);
+    const origin = [mid.x + mid.ty * slot.sc * 0.5, mid.y - mid.tx * slot.sc * 0.5]; // grow from the word's centre
+    [g, sp].forEach((n) => (n.style.transformOrigin = `${origin[0].toFixed(1)}px ${origin[1].toFixed(1)}px`));
     g.querySelector("a").addEventListener("focus", () => setActive(i));
-    return { el: g, splat: sp, geo, slot, capLen };
+    return { el: g, splat: sp, geo, slot, capLen, origin, dx: 0, dy: 0, scale: 1 };
   });
   setActive(active);
 }
 
 /* =========================================================
    Hit testing: each point belongs to at most ONE word.
-   A point is inside a word if it lies within that word's letter band,
-   measured along its own baseline. Where two bands touch, the word whose
-   centre line is nearest wins, so hitboxes never overlap.
+   The pointer is mapped back through each word's current offset / scale,
+   then tested against that word's letter band along its own baseline.
+   Where two bands touch, the nearest centre line wins, so hitboxes never overlap.
    ========================================================= */
+function bandScore(it, x, y, pad = 0) {
+  // undo the word's current hover transform
+  x -= it.dx; y -= it.dy;
+  if (it.scale !== 1) { x = it.origin[0] + (x - it.origin[0]) / it.scale; y = it.origin[1] + (y - it.origin[1]) / it.scale; }
+  const { pts, len } = it.geo;
+  let bd = Infinity, bp = null, bs = 0;
+  for (let k = 0; k < pts.length - 1; k++) {
+    const a = pts[k], b = pts[k + 1];
+    const vx = b.x - a.x, vy = b.y - a.y, L2 = vx * vx + vy * vy;
+    const t = ((x - a.x) * vx + (y - a.y) * vy) / L2;
+    const tc = Math.max(0, Math.min(1, t));
+    const d = Math.hypot(x - (a.x + vx * tc), y - (a.y + vy * tc));
+    if (d < bd) { bd = d; bp = a; bs = a.s + Math.sqrt(L2) * t; }
+  }
+  const padS = pad * it.slot.sc;
+  if (bs < -4 - padS || bs > len + 4 + padS) return Infinity;
+  const bx = bp.x + bp.tx * (bs - bp.s), by = bp.y + bp.ty * (bs - bp.s);
+  const h = (x - bx) * bp.ty - (y - by) * bp.tx; // height above the baseline
+  const topH = bs < it.capLen ? it.slot.cap : it.slot.sc * 1.04;
+  if (h < -it.slot.sc * 0.14 - padS || h > topH + padS) return Infinity;
+  return Math.abs(h - it.slot.sc / 2) / it.slot.sc;
+}
+
 function hitTest(x, y) {
   let best = -1, bestScore = Infinity;
   ITEMS.forEach((it, i) => {
-    const { pts, len } = it.geo;
-    let bd = Infinity, bp = null, bs = 0;
-    for (let k = 0; k < pts.length - 1; k++) {
-      const a = pts[k], b = pts[k + 1];
-      const vx = b.x - a.x, vy = b.y - a.y, L2 = vx * vx + vy * vy;
-      const t = ((x - a.x) * vx + (y - a.y) * vy) / L2;
-      const tc = Math.max(0, Math.min(1, t));
-      const d = Math.hypot(x - (a.x + vx * tc), y - (a.y + vy * tc));
-      if (d < bd) { bd = d; bp = a; bs = a.s + Math.sqrt(L2) * t; }
-    }
-    if (bs < -4 || bs > len + 4) return;
-    const bx = bp.x + bp.tx * (bs - bp.s), by = bp.y + bp.ty * (bs - bp.s);
-    const h = (x - bx) * bp.ty - (y - by) * bp.tx; // height above the baseline
-    const topH = bs < it.capLen ? it.slot.cap : it.slot.sc * 1.04;
-    if (h < -it.slot.sc * 0.14 || h > topH) return;
-    const score = Math.abs(h - it.slot.sc / 2) / it.slot.sc;
-    if (score < bestScore) { bestScore = score; best = i; }
+    const s = bandScore(it, x, y);
+    if (s < bestScore) { bestScore = s; best = i; }
   });
   return best;
 }
@@ -337,9 +328,23 @@ function hitTest(x, y) {
 let active = 0;
 function setActive(i) {
   active = (i + SECTIONS.length) % SECTIONS.length;
+  const A = ITEMS[active];
   ITEMS.forEach((it, j) => {
-    it.el.classList.toggle("active", j === active);
-    it.splat.classList.toggle("on", j === active);
+    const on = j === active;
+    it.el.classList.toggle("active", on);
+    it.splat.classList.toggle("on", on);
+    // Open up space: the selected word grows, words above move up, words below move down
+    // (each along its own "up" direction, so the fan keeps its shape).
+    let dx = 0, dy = 0;
+    if (A && !on) {
+      const p = it.geo.pts[Math.floor(it.geo.pts.length / 2)];
+      const dist = A.slot.cap * GAP * (j < active ? 1 : -1);
+      dx = p.ty * dist; dy = -p.tx * dist;
+    }
+    it.dx = dx; it.dy = dy; it.scale = on ? HOVER_SCALE : 1;
+    const tf = on ? `scale(${HOVER_SCALE})` : `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px)`;
+    it.el.style.transform = tf;
+    it.splat.style.transform = on ? `scale(${HOVER_SCALE})` : "";
   });
 }
 
@@ -347,17 +352,25 @@ const root = document.documentElement;
 let MS = 1, MX = 0, MY = 0;
 const isOpen = () => document.body.classList.contains("open");
 const toMenu = (e) => [(e.clientX - MX) / MS, (e.clientY - MY) / MS];
+let hovering = false;
 
 window.addEventListener("pointermove", (e) => {
   if (isOpen() || !ITEMS.length) return;
-  const i = hitTest(...toMenu(e));
-  document.body.classList.toggle("hovering", i >= 0);
+  const [x, y] = toMenu(e);
+  // Keep the current selection while the pointer is still on it (its hitbox grew with it),
+  // so the words moving apart never makes the selection flicker.
+  const stay = ITEMS[active] && bandScore(ITEMS[active], x, y, 0.55) < Infinity;
+  const i = stay ? active : hitTest(x, y);
+  hovering = i >= 0;
+  document.body.classList.toggle("hovering", hovering);
   if (i >= 0 && i !== active) setActive(i);
 });
 window.addEventListener("click", (e) => {
   if (isOpen() || !ITEMS.length) return;
   if (e.target.closest(".nameplate, .hints")) return;
-  const i = hitTest(...toMenu(e));
+  const [x, y] = toMenu(e);
+  // Open whatever is highlighted under the cursor (touch: whatever was tapped).
+  const i = hovering || (ITEMS[active] && bandScore(ITEMS[active], x, y, 0.55) < Infinity) ? active : hitTest(x, y);
   if (i >= 0) { e.preventDefault(); location.hash = `#/${SECTIONS[i].id}`; }
 });
 
@@ -372,7 +385,7 @@ const pSplat = panel.querySelector(".panel-splat");
 const dots = document.getElementById("tab-dots");
 let current = -1;
 
-pSplat.innerHTML = `<svg viewBox="0 0 400 200" preserveAspectRatio="none"><path d="M30,60 L110,40 L200,48 L300,30 L380,52 L392,120 L340,160 L220,150 L120,172 L20,150 L6,100Z" fill="#000" filter="url(#paint)"/></svg>`;
+pSplat.innerHTML = `<img src="assets/splat.png" alt="" />`;
 dots.innerHTML = SECTIONS.map((s, i) => `<button type="button" aria-label="${s.label}" data-i="${i}"></button>`).join("");
 dots.addEventListener("click", (e) => {
   const b = e.target.closest("button");
@@ -386,7 +399,7 @@ function openSection(id) {
   const back = current >= 0 && (i - current + SECTIONS.length) % SECTIONS.length > SECTIONS.length / 2;
   current = i;
   setActive(i);
-  pTitle.innerHTML = `<span class="cap">${sec.label[0]}</span>${sec.label.slice(1).toLowerCase()}`;
+  pTitle.innerHTML = `${sec.label[0].toUpperCase()}<span class="small">${sec.label.slice(1).toUpperCase()}</span>`;
   pSub.textContent = sec.sub;
   pBody.className = "panel-body";
   void pBody.offsetWidth; // restart the slide animation
@@ -400,6 +413,7 @@ function openSection(id) {
   document.body.classList.remove("hovering");
   panel.setAttribute("aria-hidden", "false");
   setTimeout(() => pBody.focus({ preventScroll: true }), 30);
+  requestAnimationFrame(placePanelSplat);
   const form = document.getElementById("contact-form");
   if (form) form.addEventListener("submit", (e) => {
     e.preventDefault();
@@ -408,6 +422,20 @@ function openSection(id) {
     location.href = `mailto:${PROFILE.email}?subject=${encodeURIComponent("Portfolio contact")}&body=${body}`;
   });
 }
+
+// Map the reference splash onto the panel title the same way it maps onto a menu word.
+function placePanelSplat() {
+  const img = pSplat.querySelector("img");
+  const tw = pTitle.offsetWidth * 0.8;              // title is squeezed with scaleX(.8)
+  const fs = parseFloat(getComputedStyle(pTitle).fontSize);
+  const cap = fs * 0.72, base = pTitle.offsetHeight * 0.86;
+  const sx = tw / SPLAT.len, sy = (cap * 1.15) / SPLAT.cap;
+  Object.assign(img.style, {
+    width: SPLAT.w * sx + "px", height: SPLAT.h * sy + "px",
+    left: -SPLAT.ax * sx + "px", top: base - SPLAT.ay * sy + "px",
+  });
+}
+window.addEventListener("resize", () => isOpen() && placePanelSplat());
 
 function closeSection(updateHash = true) {
   document.body.classList.remove("open");
@@ -458,9 +486,9 @@ function layout() {
     const s = Math.min(W / 1280, H / 720);
     const ox = (W - 1280 * s) / 2, oy = (H - 720 * s) / 2;
     MS = s; MX = ox; MY = oy;
-    hw = 970 * s;
-    hx = ox + 430 * s;
-    hy = H + 18 * s - hw * (978 / 1469); // bottom edge stays below the screen while floating
+    hw = 1036 * s;
+    hx = ox + 363 * s;
+    hy = H + 18 * s - hw * (1001 / 1570); // bottom edge stays below the screen while floating
     ui = Math.max(0.7, s);
   } else {
     MS = Math.min(W / 700, (H * 0.6) / 720);
@@ -483,10 +511,10 @@ function layout() {
 
 /* Thin, faded white lines: giant circles around the head, a long diagonal and a dashed crosshair. */
 function drawLines(W, H, hx, hy, hw) {
-  const hh = hw * (978 / 1469);
-  const cx = hx + hw * 0.34, cy = hy + hh * 0.53;
+  const hh = hw * (1001 / 1570);
+  const cx = hx + hw * 0.38, cy = hy + hh * 0.52;
   const R1 = hw * 0.52, R2 = hw * 0.34, R3 = hw * 0.74;
-  const ex = hx + hw * 0.485, ey = hy + hh * 0.241;
+  const ex = hx + hw * 0.518, ey = hy + hh * 0.266;
   const diag = { x1: hx + hw * 0.02, y1: H + 20, x2: W + 20, y2: hy + hh * 0.08 };
   const hzY = hy + hh * 0.5, vX = Math.min(W - 40, hx + hw * 0.92);
   const fade = Math.max(W, H);
@@ -523,6 +551,6 @@ window.addEventListener("resize", layout);
 layout();
 
 // Build the menu once the display font is ready (its metrics size every word).
-(document.fonts && document.fonts.load ? document.fonts.load('900 100px "Playfair Display SC"') : Promise.resolve())
+(document.fonts && document.fonts.load ? Promise.all([document.fonts.load('400 100px "Abril Fatface"'), document.fonts.load('900 100px "Playfair Display SC"')]) : Promise.resolve())
   .catch(() => {})
   .then(() => { buildMenu(); route(); });
