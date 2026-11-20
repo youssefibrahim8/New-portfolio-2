@@ -165,7 +165,7 @@ const ICONS = {
 };
 const iconSVG = (k) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${ICONS[k] || ICONS.code}</svg>`;
 
-// The projects screen uses the reference artwork (assets/projects-bg.jpg, 1672 x 941) as its whole background.
+// The projects screen uses the reference artwork (1672 x 941, inside assets/projects-bg-wide.jpg) as its background.
 // Each project sits on one of the hexagons drawn in it; `hex` is that hexagon's centre in the image.
 const PBG = { w: 1672, h: 941, hexW: 60 };
 const pbg = document.createElement("div");
@@ -179,15 +179,17 @@ function pbgFit() {
   const W = window.innerWidth, H = window.innerHeight;
   if (W >= H) {
     // the circle (image y 21-891, centre x 835) fills 74% of the screen height, below the title
-    const s = (H * 0.74) / 870;
-    return { s, ox: W / 2 - 835 * s, oy: H * 0.19 - 21 * s };
+    const s = (H * 0.72) / 870;
+    return { s, ox: W / 2 - 835 * s, oy: H * 0.215 - 21 * s };
   }
   const s = Math.min((H * 0.4) / 452, W / 300);   // the project hexagons span 452 px of the image vertically
   return { s, ox: W / 2 - 825 * s, oy: H * 0.55 - 520 * s };
 }
 function placeNodes() {
   const { s, ox, oy } = pbgFit();
-  Object.assign(pbg.style, { left: ox + "px", top: oy + "px", width: PBG.w * s + "px", height: PBG.h * s + "px" });
+  // the background is the artwork extended outward with its own texture (projects-bg-wide.jpg: the original
+  // sits 1000 px in from the left and 560 px down, in a 3672 x 2061 frame), so it always fills the screen
+  Object.assign(pbg.style, { left: ox - 1000 * s + "px", top: oy - 560 * s + "px", width: 3672 * s + "px", height: 2061 * s + "px" });
   pnodes.querySelectorAll(".pnode").forEach((el) => {
     const p = PROJECTS[+el.dataset.k];
     Object.assign(el.style, { left: ox + p.hex[0] * s + "px", top: oy + p.hex[1] * s + "px", width: PBG.hexW * s + "px" });

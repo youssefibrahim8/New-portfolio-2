@@ -203,7 +203,7 @@ body.open .hints { opacity: 0; }
   z-index: 8;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  padding: 23vh 5vw 7vh 3.6vw;
+  padding: 25vh 5vw 7vh 3.6vw;
   pointer-events: none;
   opacity: 0;
   visibility: hidden;
@@ -219,11 +219,11 @@ body.open .panel { pointer-events: auto; opacity: 1; visibility: visible; transi
 .panel-title {
   position: absolute;
   left: -.3vh;
-  bottom: -16.4vh;                 /* baseline ~19.5% down the screen; only the very tops run off the edge */
+  bottom: -17.7vh;                 /* baseline ~19.5% down the screen; only the very tops run off the edge */
   margin: 0;
   font-family: var(--heavy);
   font-weight: 400;
-  font-size: 21vh;
+  font-size: 15vh;
   line-height: 1;
   letter-spacing: -.01em;
   white-space: nowrap;
@@ -441,8 +441,8 @@ body.open .panel { pointer-events: auto; opacity: 1; visibility: visible; transi
   .np-role { font-size: 12px; }
 }
 @media (max-width: 760px) {
-  .panel { padding: 15vh 16px 72px; }
-  .panel-title { font-size: 10vh; bottom: -7.8vh; }
+  .panel { padding: 16vh 16px 72px; }
+  .panel-title { font-size: 8vh; bottom: -10.9vh; }
   .panel-body { padding: 1.4rem 1.2rem 1.6rem; clip-path: polygon(0 0, calc(100% - 22px) 0, 100% 22px, 100% 100%, 22px 100%, 0 calc(100% - 22px)); }
   .tab-btn span { display: none; }
   .back { right: 16px; bottom: 16px; }
@@ -476,16 +476,14 @@ body.wiping .panel-splat { opacity: 0; }
 /* projects artwork background and its clickable hexagons */
 .pbg {
   position: fixed; z-index: 1;
-  background: url("assets/projects-bg.jpg") 0 0 / 100% 100% no-repeat;
+  background: url("assets/projects-bg-wide.jpg") 0 0 / 100% 100% no-repeat;
   opacity: 0; visibility: hidden; transition: opacity .3s ease, filter .4s ease;
 }
 body.pmode .pbg { opacity: 1; visibility: visible; }
 body.pmode:not(.ptree-on) .pbg { filter: brightness(.55); }
 body.pmode .hero, body.pmode .lines, body.pmode .bg { visibility: hidden; }
 body.pmode { background: #03050a; }   /* matches the artwork's dark edges */
-@media (min-aspect-ratio: 1/1) {
-  .pbg { -webkit-mask-image: radial-gradient(closest-side, #000 82%, transparent); mask-image: radial-gradient(closest-side, #000 82%, transparent); -webkit-mask-size: 100% 100%; mask-size: 100% 100%; }
-}
+
 .pnodes { position: fixed; inset: 0; z-index: 9; pointer-events: none; }
 body:not(.ptree-on) .pnodes, body.wiping .pnodes { display: none; }
 .pnode {
@@ -559,6 +557,5 @@ body:not(.ptree-on) .pnodes, body.wiping .pnodes { display: none; }
 /* on the projects tree the page dots move to the bottom, off the artwork's top hexagon */
 body.ptree-on .tab-dots { position: fixed; left: 50%; bottom: 2.4vh; transform: translateX(-50%); }
 @media (max-aspect-ratio: 1/1) {
-  .pbg { -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 22%, #000 88%, transparent); mask-image: linear-gradient(to bottom, transparent 0, #000 22%, #000 88%, transparent); }
   body.ptree-on .tab-dots { bottom: auto; position: static; transform: none; }
 }
