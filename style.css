@@ -507,6 +507,32 @@ body.pmode:not(.ptree-on) .pbg { filter: brightness(.55); }
 body.pmode .hero, body.pmode .lines, body.pmode .bg { visibility: hidden; }
 body.pmode { background: #03050a; }   /* matches the artwork's dark edges */
 
+/* animated layer over the artwork */
+.pfx { position: fixed; z-index: 2; pointer-events: none; opacity: 0; visibility: hidden; transition: opacity .5s ease; }
+body.ptree-on:not(.wiping) .pfx { opacity: 1; visibility: visible; }
+.pfx svg, .pfx-dust { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.pfx-sweep {                 /* radar sweep turning inside the circle */
+  position: absolute; left: calc(400 / 1672 * 100%); top: calc(21 / 941 * 100%);
+  width: calc(870 / 1672 * 100%); aspect-ratio: 1; border-radius: 50%;
+  background: conic-gradient(from 0deg, rgba(200, 255, 235, 0) 0deg, rgba(200, 255, 235, 0) 300deg, rgba(200, 255, 235, .08) 354deg, rgba(235, 255, 248, .18) 360deg);
+  mix-blend-mode: screen;
+  -webkit-mask: radial-gradient(closest-side, transparent 18%, #000 60%, #000 98%, transparent 100%);
+          mask: radial-gradient(closest-side, transparent 18%, #000 60%, #000 98%, transparent 100%);
+  animation: pfx-spin 11s linear infinite;
+}
+@keyframes pfx-spin { to { transform: rotate(1turn); } }
+.pflow { stroke-dasharray: 3 14; opacity: .45; animation: pfx-flow 2.4s linear infinite; }
+@keyframes pfx-flow { to { stroke-dashoffset: -34; } }
+/* project markers: a glowing rim that breathes, a ripple, and a little orbit */
+.pm-rim { stroke-width: 2.6; filter: url(#pglow); animation: pm-breathe 2.6s ease-in-out infinite; }
+@keyframes pm-breathe { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
+.pm-ripple { stroke-width: 1.5; transform-box: fill-box; transform-origin: center; animation: pm-ripple 2.6s ease-out infinite; }
+@keyframes pm-ripple { from { transform: scale(1); opacity: .7; } to { transform: scale(1.9); opacity: 0; } }
+.pm-orbit { opacity: .55; }
+.pm-orbit circle { stroke-width: 1.2; }
+.pm-dot { fill: #fff; stroke: none; filter: url(#pglow); }
+@media (prefers-reduced-motion: reduce) { .pfx-sweep, .pflow, .pm-rim, .pm-ripple { animation: none; } }
+
 .pnodes { position: fixed; inset: 0; z-index: 9; pointer-events: none; }
 body:not(.ptree-on) .pnodes, body.wiping .pnodes { display: none; }
 .pnode {
@@ -524,7 +550,7 @@ body:not(.ptree-on) .pnodes, body.wiping .pnodes { display: none; }
   clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%, 9% 50%, 30% 89%, 70% 89%, 91% 50%, 70% 11%, 30% 11%, 9% 50%, 0 50%);
   opacity: 0; transition: opacity .15s ease;
 }
-.pnode::after { content: ""; position: absolute; inset: 0; background: radial-gradient(closest-side, rgba(255,255,255,.35), rgba(255,255,255,.12)); opacity: 0; transition: opacity .15s ease; }
+.pnode::after { content: ""; position: absolute; inset: 0; background: radial-gradient(closest-side, rgba(255,255,255,.35), rgba(255,255,255,.12)); opacity: .35; transition: opacity .15s ease; }
 .pnode { transition: transform .2s cubic-bezier(.3, 1.4, .5, 1), filter .2s ease; }
 .pnode:hover, .pnode.on, .pnode:focus-visible { filter: drop-shadow(0 0 6px rgba(255, 255, 255, .9)) drop-shadow(0 0 14px rgba(255, 255, 255, .5)); }
 .pnode:hover, .pnode.on, .pnode:focus-visible { transform: translate(-50%, -50%) scale(1.18); outline: none; }

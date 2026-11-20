@@ -180,7 +180,77 @@ const pbg = document.createElement("div");
 pbg.className = "pbg";
 const pnodes = document.createElement("div");
 pnodes.className = "pnodes";
-document.body.append(pbg, pnodes);
+// Living layer over the artwork (same 1672 x 941 coordinates): turning dials around the circle, a light
+// running round its rim, a radar sweep, drifting dust, energy flowing between projects and a marker on each project.
+const CIRC = { x: 835, y: 456, r: 435 };
+const pfx = document.createElement("div");
+pfx.className = "pfx";
+pfx.setAttribute("aria-hidden", "true");
+document.body.append(pbg, pfx, pnodes);
+const HEX = (r) => [[r, 0], [r / 2, r * 0.866], [-r / 2, r * 0.866], [-r, 0], [-r / 2, -r * 0.866], [r / 2, -r * 0.866]].map((q) => q.join(",")).join(" ");
+function buildPfx() {
+  const { x, y, r } = CIRC;
+  const spin = (dur, rev) => `<animateTransform attributeName="transform" type="rotate" from="${rev ? 360 : 0} ${x} ${y}" to="${rev ? 0 : 360} ${x} ${y}" dur="${dur}s" repeatCount="indefinite"/>`;
+  const C = 2 * Math.PI * r;
+  const route = [...PROJECTS].sort((a, b) => a.hex[1] - b.hex[1]).map((q) => q.hex.join(",")).join(" L");
+  const markers = PROJECTS.map((q, k) => {
+    const [hx, hy] = q.hex, d = (k * 0.47).toFixed(2);
+    return `<g transform="translate(${hx} ${hy})">
+      <polygon class="pm-ripple" points="${HEX(31)}" style="animation-delay:-${d}s"/>
+      <polygon class="pm-rim" points="${HEX(31)}" style="animation-delay:-${d}s"/>
+      <g class="pm-orbit"><circle r="44" stroke-dasharray="10 6 2 6"/>${spin(14 + k * 2, k % 2).replace(new RegExp(` ${x} ${y}`, "g"), " 0 0")}</g>
+      <circle class="pm-dot" r="2.6" cy="-44">${spin(6 + k, !(k % 2)).replace(new RegExp(` ${x} ${y}`, "g"), " 0 0")}</circle>
+    </g>`;
+  }).join("");
+  pfx.innerHTML = `<div class="pfx-sweep"></div><canvas class="pfx-dust"></canvas>
+  <svg viewBox="0 0 1672 941" preserveAspectRatio="none">
+    <defs>
+      <filter id="pglow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    </defs>
+    <g fill="none" stroke="#e8f2ee">
+      <g opacity=".55"><circle cx="${x}" cy="${y}" r="${r + 16}" stroke-width="1.4" stroke-dasharray="1.5 12"/>${spin(120)}</g>
+      <g opacity=".4"><circle cx="${x}" cy="${y}" r="${r + 32}" stroke-width="7" stroke-dasharray="2 34 2 34 2 90"/>${spin(180, 1)}</g>
+      <g opacity=".3"><circle cx="${x}" cy="${y}" r="${r + 32}" stroke-width="1"/></g>
+      <g opacity=".22"><circle cx="${x}" cy="${y}" r="${r * 0.7}" stroke-width="1.2" stroke-dasharray="60 14 6 14"/>${spin(90, 1)}</g>
+      <g filter="url(#pglow)">
+        <circle cx="${x}" cy="${y}" r="${r}" stroke-width="3" stroke-linecap="round" stroke-dasharray="${C * 0.06} ${C * 0.94}" opacity=".85"/>
+        <circle cx="${x}" cy="${y}" r="${r}" stroke-width="3" stroke-linecap="round" stroke-dasharray="${C * 0.03} ${C * 0.97}" stroke-dashoffset="${C / 2}" opacity=".6"/>
+        ${spin(26)}
+      </g>
+      <path class="pflow" d="M${route}" stroke-width="1.6" filter="url(#pglow)"/>
+    </g>
+    <g fill="none" stroke="#fff">${markers}</g>
+  </svg>`;
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) pfx.querySelector("svg").pauseAnimations();
+}
+buildPfx();
+
+// drifting dust inside the circle
+const dust = (() => {
+  const cv = pfx.querySelector(".pfx-dust"), ctx = cv.getContext("2d");
+  const motes = Array.from({ length: 70 }, () => ({ a: Math.random() * 6.283, d: Math.sqrt(Math.random()), z: Math.random(), t: Math.random() * 6.283 }));
+  let raf = 0, last = 0;
+  function frame(now) {
+    raf = requestAnimationFrame(frame);
+    const dt = Math.min(50, now - (last || now)) / 1000; last = now;
+    const w = cv.width, h = cv.height, k = w / 1672;
+    ctx.clearRect(0, 0, w, h);
+    for (const m of motes) {
+      m.t += dt * (0.4 + m.z);
+      m.a += dt * 0.02 * (0.5 + m.z);
+      const rr = CIRC.r * m.d;
+      const px = (CIRC.x + Math.cos(m.a) * rr) * k, py = (CIRC.y + Math.sin(m.a) * rr - Math.sin(m.t * 0.3) * 6) * k;
+      const al = (0.25 + 0.55 * m.z) * (0.5 + 0.5 * Math.sin(m.t));
+      ctx.fillStyle = `rgba(225,245,238,${al.toFixed(3)})`;
+      ctx.beginPath(); ctx.arc(px, py, (0.6 + m.z * 1.6) * Math.max(1, k * 1.4), 0, 6.283); ctx.fill();
+    }
+  }
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  return {
+    size(w, h) { const dpr = Math.min(2, devicePixelRatio || 1); cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); },
+    run(on) { cancelAnimationFrame(raf); last = 0; if (on && !reduced) raf = requestAnimationFrame(frame); },
+  };
+})();
 
 // Fit the artwork: cover the screen on landscape; on portrait, shrink it so its hexagons sit below the project list.
 function pbgFit() {
@@ -198,6 +268,8 @@ function placeNodes() {
   // the background is the artwork extended outward with its own texture (projects-bg-wide.jpg: the original
   // sits 1000 px in from the left and 560 px down, in a 3672 x 2061 frame), so it always fills the screen
   Object.assign(pbg.style, { left: ox - 1000 * s + "px", top: oy - 560 * s + "px", width: 3672 * s + "px", height: 2061 * s + "px" });
+  Object.assign(pfx.style, { left: ox + "px", top: oy + "px", width: PBG.w * s + "px", height: PBG.h * s + "px" });
+  dust.size(PBG.w * s, PBG.h * s);
   pnodes.querySelectorAll(".pnode").forEach((el) => {
     const p = PROJECTS[+el.dataset.k];
     Object.assign(el.style, { left: ox + p.hex[0] * s + "px", top: oy + p.hex[1] * s + "px", width: PBG.hexW * s + "px" });
@@ -228,6 +300,7 @@ function setProjectsMode(on, tree) {
   if (on) placeNodes();
   document.body.classList.toggle("ptree-on", on && tree);
   if (!on || !tree) pnodes.innerHTML = "";
+  dust.run(on && tree);
 }
 
 function projectDetail(p) {
