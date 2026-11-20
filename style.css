@@ -228,7 +228,7 @@ body.open .panel { pointer-events: auto; opacity: 1; visibility: visible; transi
   letter-spacing: -.01em;
   white-space: nowrap;
   color: #f2f0ee;
-  background: #f2f0ee var(--marble, none) 0 0 / 100% 100%;
+  background: #f2f0ee url("assets/marble.jpg") 0 0 / 100% 100%;
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;

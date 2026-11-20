@@ -793,24 +793,6 @@ function fitTitle() {
 }
 window.addEventListener("resize", () => isOpen() && fitTitle());
 
-// White marble texture for the title, made from the background art: mostly white with dark streaks.
-function buildMarble() {
-  if (!bgImg.complete || !bgImg.naturalWidth) return;
-  const W = 1200, H = 360, c = document.createElement("canvas");
-  c.width = W; c.height = H;
-  const g = c.getContext("2d");
-  g.drawImage(bgImg, 0, 0, bgImg.naturalWidth, bgImg.naturalHeight * 0.55, 0, 0, W, H);
-  const d = g.getImageData(0, 0, W, H), px = d.data;
-  for (let k = 0; k < px.length; k += 4) {
-    const L = 0.3 * px[k] + 0.59 * px[k + 1] + 0.11 * px[k + 2];
-    let v = 246 - Math.max(0, 70 - L) * 3.1;           // dark areas of the art become dark streaks
-    v = Math.max(55, Math.min(246, v));
-    px[k] = v; px[k + 1] = v * 0.99; px[k + 2] = v * 0.98; px[k + 3] = 255;
-  }
-  g.putImageData(d, 0, 0);
-  document.documentElement.style.setProperty("--marble", `url(${c.toDataURL("image/jpeg", 0.85)})`);
-}
-
 function placePanelSplat() {
   const img = pSplat.querySelector("img");
   const tw = pTitle.offsetWidth * 0.8;              // title is squeezed with scaleX(.8)
@@ -824,19 +806,9 @@ function placePanelSplat() {
 }
 window.addEventListener("resize", () => isOpen() && placePanelSplat());
 
-// The un-rotated splash image recoloured, as an image URL (cached).
-const SPLASH_URLS = {};
-function splashURL(color) {
-  if (SPLASH_URLS[color]) return SPLASH_URLS[color];
-  if (!splatImg.complete || !splatImg.naturalWidth) return "assets/splat.png";
-  const c = document.createElement("canvas");
-  c.width = splatImg.naturalWidth; c.height = splatImg.naturalHeight;
-  const g = c.getContext("2d");
-  g.drawImage(splatImg, 0, 0);
-  g.globalCompositeOperation = "source-in";
-  g.fillStyle = color; g.fillRect(0, 0, c.width, c.height);
-  return (SPLASH_URLS[color] = c.toDataURL());
-}
+// The splash in a section's colour (pre-made files, so nothing reads image pixels: that is blocked
+// when the site is opened straight from a file).
+const splashURL = (color) => `assets/splash/${color.replace("#", "").toLowerCase()}.png`;
 
 function closeSection(updateHash = true) {
   setProjectsMode(false);
@@ -988,7 +960,6 @@ function chipKeepURL(coverage) {
 }
 
 const bgImg = new Image();
-bgImg.onload = buildMarble;
 bgImg.src = "assets/background.jpg";
 function drawCover(g, img, W, H) {
   const s = Math.max(W / img.naturalWidth, H / img.naturalHeight);
