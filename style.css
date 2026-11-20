@@ -527,7 +527,7 @@ body.wiping .panel-splat { opacity: 0; }
 .pnode { pointer-events: auto; }
 .pnode {
   position: absolute;
-  width: 8.6%;
+  width: 7.8%;
   aspect-ratio: 1.155;
   transform: translate(-50%, -50%);
   padding: 0;
@@ -608,3 +608,5 @@ body.wiping .panel-splat { opacity: 0; }
   .pcard { display: none; }
   .pdetail { grid-template-columns: 1fr; height: auto; }
 }
+
+.tree-labels text { font-family: var(--display); font-size: 11px; letter-spacing: .08em; }

@@ -133,21 +133,21 @@ const PROJECTS = [
     code: "https://github.com/youssefibrahim8/New-portfolio-2", live: "",
   },
   {
-    slug: "project-two", title: "Project Two", year: "20XX", kind: "Java", icon: "coffee", cell: [-3, -1],
+    slug: "project-two", title: "Project Two", year: "20XX", kind: "Java", icon: "coffee", cell: [-4, -4],
     tags: ["Java"],
     summary: "A short, punchy description of what it does and the problem it solves.",
     details: ["Describe the project: what it does, why you built it and what you learned.", "Mention the hardest technical problem and how you solved it."],
     code: "#", live: "",
   },
   {
-    slug: "project-three", title: "Project Three", year: "20XX", kind: "Python", icon: "terminal", cell: [-1, 1],
+    slug: "project-three", title: "Project Three", year: "20XX", kind: "Python", icon: "terminal", cell: [-1, -2],
     tags: ["Python"],
     summary: "Highlight the most interesting technical challenge or result here.",
     details: ["Describe the project: what it does, why you built it and what you learned.", "Add numbers if you have them: users, speed-ups, accuracy, stars."],
     code: "#", live: "",
   },
   {
-    slug: "project-four", title: "Project Four", year: "20XX", kind: "C++", icon: "chip", cell: [2, 4],
+    slug: "project-four", title: "Project Four", year: "20XX", kind: "C++", icon: "chip", cell: [3, 4],
     tags: ["C++"],
     summary: "Another project worth showing off, ideally with a live demo link.",
     details: ["Describe the project: what it does, why you built it and what you learned."],
@@ -166,7 +166,7 @@ const ICONS = {
 const iconSVG = (k) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${ICONS[k] || ICONS.code}</svg>`;
 
 // Honeycomb geometry (flat-topped hexagons) inside a 1000 x 1000 drawing.
-const HEX = { cx: 500, cy: 520, r: 38 };
+const HEX = { cx: 500, cy: 500, r: 34 };
 function hexCenter(c, r) {
   const w = HEX.r * 1.5, h = HEX.r * Math.sqrt(3);
   return [HEX.cx + c * w, HEX.cy + r * h + (Math.abs(c) % 2 ? h / 2 : 0)];
@@ -175,46 +175,118 @@ function hexPoints(x, y, r) {
   return [0, 1, 2, 3, 4, 5].map((k) => { const a = (Math.PI / 3) * k; return `${(x + r * Math.cos(a)).toFixed(1)},${(y + r * Math.sin(a)).toFixed(1)}`; }).join(" ");
 }
 
-// The drawing: circle, square, a figure with two arm and two leg positions, and the honeycomb.
-function treeSVG() {
-  let cells = "";
-  for (let c = -10; c <= 10; c++) for (let r = -10; r <= 10; r++) {
-    const [x, y] = hexCenter(c, r);
-    const d = Math.hypot(x - HEX.cx, y - HEX.cy);
-    if (d > 400) continue;
-    // brighter along the body (a vertical column) and the outstretched arms (a band)
-    const body = Math.abs(x - HEX.cx) < 110 || (Math.abs(y - 330) < 70 && Math.abs(x - HEX.cx) < 390);
-    const op = body ? 0.55 : 0.16;
-    cells += `<polygon points="${hexPoints(x, y, HEX.r - 2)}" stroke-opacity="${op}"/>`;
+// The drawing: a Vitruvian figure (Leonardo's proportions) in a circle and square, shaded teal at the top
+// fading to pink at the feet, with a honeycomb that follows the body and limbs, plus notes and orbit diagrams.
+// Square: x 160-840, y 230-910 (side 680). Circle: centred on the navel (500, 500), r 413.
+const FIG = (() => {
+  const L = (pts) => pts; // [x, y, width] along a limb's centre line
+  const limbs = [];
+  for (const s of [-1, 1]) {
+    limbs.push(L([[500 + s * 84, 352, 30], [500 + s * 220, 360, 23], [500 + s * 330, 364, 17], [500 + s * 338, 364, 16]]));   // level arms
+    limbs.push(L([[500 + s * 82, 350, 30], [500 + s * 190, 302, 23], [500 + s * 290, 262, 17], [500 + s * 298, 259, 16]]));   // raised arms
+    limbs.push(L([[500 + s * 40, 560, 66], [500 + s * 34, 740, 42], [500 + s * 30, 878, 24]]));                              // straight legs
+    limbs.push(L([[500 + s * 40, 560, 66], [500 + s * 118, 712, 42], [500 + s * 196, 846, 24]]));                            // spread legs
   }
+  const hands = [];
+  for (const s of [-1, 1]) {
+    hands.push([500 + s * 358, 364, 26, 13, 0]);
+    hands.push([500 + s * 316, 252, 26, 13, s * -22]);
+    hands.push([500 + s * 34, 898, 30, 11, s * 8]);
+    hands.push([500 + s * 212, 866, 30, 11, s * 52]);
+  }
+  return { limbs, hands };
+})();
+
+function limbPath(pts) {
+  // outline of a tapered limb: offset the centre line on both sides, rounded at the ends
+  const left = [], right = [];
+  pts.forEach((p, k) => {
+    const a = pts[Math.max(0, k - 1)], b = pts[Math.min(pts.length - 1, k + 1)];
+    let nx = -(b[1] - a[1]), ny = b[0] - a[0];
+    const l = Math.hypot(nx, ny) || 1; nx /= l; ny /= l;
+    left.push([p[0] + nx * p[2] / 2, p[1] + ny * p[2] / 2]);
+    right.push([p[0] - nx * p[2] / 2, p[1] - ny * p[2] / 2]);
+  });
+  const e = pts[pts.length - 1], s0 = pts[0];
+  const f = (q) => `${q[0].toFixed(1)},${q[1].toFixed(1)}`;
+  return `M${f(left[0])} ${left.slice(1).map((q) => "L" + f(q)).join(" ")} A${e[2] / 2},${e[2] / 2} 0 0 1 ${f(right[right.length - 1])} ${right.slice(0, -1).reverse().map((q) => "L" + f(q)).join(" ")} A${s0[2] / 2},${s0[2] / 2} 0 0 1 ${f(left[0])}Z`;
+}
+const TORSO = "M482,318 C484,330 470,338 440,344 C414,349 404,356 412,380 C420,410 432,440 440,470 C446,500 432,530 432,556 C446,572 474,580 500,580 C526,580 554,572 568,556 C568,530 554,500 560,470 C568,440 580,410 588,380 C596,356 586,349 560,344 C530,338 516,330 518,318 Z";
+
+// is a point on the body (used to lay the honeycomb along the figure)?
+function onFigure(x, y, pad) {
+  if (Math.hypot(x - 500, (y - 272) * 0.8) < 46 + pad) return true;         // head
+  if (Math.abs(x - 500) < 74 + pad && y > 320 && y < 575) return true;        // torso
+  for (const pts of FIG.limbs) for (let k = 0; k < pts.length - 1; k++) {
+    const [ax, ay, aw] = pts[k], [bx, by, bw] = pts[k + 1];
+    const vx = bx - ax, vy = by - ay, t = Math.max(0, Math.min(1, ((x - ax) * vx + (y - ay) * vy) / (vx * vx + vy * vy)));
+    if (Math.hypot(x - ax - vx * t, y - ay - vy * t) < (aw + (bw - aw) * t) / 2 + pad) return true;
+  }
+  return false;
+}
+
+function treeSVG() {
+  // honeycomb along the figure (a few stray cells too), brighter where the body is
+  let cells = "";
+  for (let c = -12; c <= 12; c++) for (let r = -12; r <= 12; r++) {
+    const [x, y] = hexCenter(c, r);
+    if (Math.hypot(x - 500, y - 500) > 420 || y < 120) continue;
+    const on = onFigure(x, y, 8);
+    const stray = !on && ((c * 7 + r * 13 + 50) % 11 === 0) && onFigure(x, y, 60);
+    if (!on && !stray) continue;
+    const dark = on && (((c * 5 + r * 3) % 7 + 7) % 7 === 0);   // some cells are dark, like the empty slots in the reference
+    cells += `<polygon points="${hexPoints(x, y, HEX.r - 3)}" stroke-opacity="${on ? 0.6 : 0.3}"${dark ? ' fill="#05080c" fill-opacity=".72"' : ""}/>`;
+  }
+  const limbs = FIG.limbs.map((p) => `<path d="${limbPath(p)}"/>`).join("");
+  const hands = FIG.hands.map(([x, y, rx, ry, a]) => `<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" transform="rotate(${a} ${x} ${y})"/>`).join("");
+  const body = `<ellipse cx="500" cy="272" rx="36" ry="46"/><path d="${TORSO}"/>${limbs}${hands}`;
+  // muscle / anatomy strokes
+  const anatomy = `<path d="M452,388 Q478,404 500,396 Q522,404 548,388M462,430 Q500,446 538,430M476,470 H524M478,500 H522M480,530 Q500,540 520,530M500,396 V560M466,640 Q474,660 468,690M534,640 Q526,660 532,690M462,752 Q472,746 480,754M520,754 Q528,746 538,752M486,262 Q492,258 496,264M504,264 Q508,258 514,262M494,292 Q500,296 506,292M472,236 Q500,214 528,236"/>`;
+  // handwritten notes: rows of short strokes
+  let notes = "";
+  const R = rng(5);
+  for (const [x0, y0, rows, w] of [[40, 740, 6, 170], [610, 905, 2, 220], [180, 150, 2, 120], [720, 200, 3, 110]]) {
+    for (let k = 0; k < rows; k++) { let x = x0; const y = y0 + k * 13; while (x < x0 + w) { const l = 4 + R() * 14; notes += `M${x.toFixed(0)},${y}h${l.toFixed(0)}`; x += l + 3 + R() * 4; } }
+  }
+  const labels = [["KNIGHT", 300, 575], ["BRAWLER", 395, 498], ["WARRIOR", 700, 760], ["IV", 330, 390], ["IV", 690, 600], ["IV", 420, 650], ["III", 290, 230], ["V", 740, 290]]
+    .map(([t, x, y]) => `<text x="${x}" y="${y}">${t}</text>`).join("");
   return `<svg class="tree-art" viewBox="0 0 1000 1000" aria-hidden="true">
     <defs>
-      <filter id="chalk2"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="3"/><feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -1.6 1.75"/><feComposite in="SourceGraphic" operator="in"/></filter>
-      <radialGradient id="treeGlow" cx=".5" cy=".52" r=".5"><stop offset="0" stop-color="#0a141a" stop-opacity=".78"/><stop offset=".75" stop-color="#0a141a" stop-opacity=".55"/><stop offset="1" stop-color="#0a141a" stop-opacity="0"/></radialGradient>
+      <filter id="chalk2"><feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="2" seed="3"/><feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -1.5 1.7"/><feComposite in="SourceGraphic" operator="in"/></filter>
+      <filter id="soft2"><feGaussianBlur stdDeviation="1.2"/></filter>
+      <radialGradient id="treeGlow" cx=".5" cy=".55" r=".55"><stop offset="0" stop-color="#132338" stop-opacity=".92"/><stop offset=".7" stop-color="#0f1c2c" stop-opacity=".75"/><stop offset="1" stop-color="#0f1c2c" stop-opacity="0"/></radialGradient>
+      <linearGradient id="figFill" gradientUnits="userSpaceOnUse" x1="0" y1="200" x2="0" y2="910">
+        <stop offset="0" stop-color="#8fe0c8"/><stop offset=".42" stop-color="#89c9c4"/><stop offset=".62" stop-color="#c79ac6"/><stop offset="1" stop-color="#e3a2c4"/>
+      </linearGradient>
+      <pattern id="hatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(35)"><path d="M0,0 V7" stroke="#e8f2f0" stroke-width="1" stroke-opacity=".5"/></pattern>
     </defs>
-    <circle cx="500" cy="520" r="470" fill="url(#treeGlow)"/>
+    <circle cx="500" cy="520" r="520" fill="url(#treeGlow)"/>
     <g filter="url(#chalk2)" fill="none" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="500" cy="520" r="430" stroke="#c9d6d4" stroke-opacity=".55" stroke-width="3"/>
-      <rect x="160" y="190" width="680" height="680" stroke="#c9d6d4" stroke-opacity=".38" stroke-width="2.4"/>
-      <g class="cells" stroke="#d8e3e1" stroke-width="1.6">${cells}</g>
-      <!-- figure: head, torso, arms (level and raised), legs (together and apart) -->
-      <g stroke="#a8e6cf" stroke-opacity=".95" stroke-width="4.2">
-        <circle cx="500" cy="250" r="52"/>
-        <path d="M478 300 470 330M522 300 530 330"/>
-        <path d="M470 330 C430 336 330 336 170 338M530 330 C570 336 670 336 830 338"/>
-        <path d="M470 340 C420 300 330 230 250 170M530 340 C580 300 670 230 750 170"/>
-        <path d="M455 345 C450 420 455 470 470 560 M545 345 C550 420 545 470 530 560 M470 560 Q500 580 530 560"/>
+      <!-- construction lines, circle and square -->
+      <g stroke="#d6e2e8" stroke-opacity=".28" stroke-width="1.3">
+        <path d="M60,500 H940M500,70 V950M160,560 H840M130,365 H870"/>
+        <path d="M90,620 H230M90,632 H200M780,452 H930M800,520 H930"/>
       </g>
-      <g stroke="#f0a8c8" stroke-opacity=".9" stroke-width="4.2">
-        <path d="M478 570 C470 680 468 760 470 865M522 570 C530 680 532 760 530 865"/>
-        <path d="M470 575 C430 660 360 760 300 840M530 575 C570 660 640 760 700 840"/>
+      <circle cx="500" cy="500" r="413" stroke="#e6eef2" stroke-opacity=".8" stroke-width="2.6"/>
+      <rect x="160" y="230" width="680" height="680" stroke="#e6eef2" stroke-opacity=".7" stroke-width="2.2"/>
+      <!-- the figure: translucent shaded body, hatching and outline -->
+      <g fill="url(#figFill)" fill-opacity=".26" stroke="none">${body}</g>
+      <g fill="url(#hatch)" fill-opacity=".35" stroke="none">${body}</g>
+      <g stroke="url(#figFill)" stroke-opacity=".95" stroke-width="2.4">${body}</g>
+      <g stroke="url(#figFill)" stroke-opacity=".6" stroke-width="1.6">${anatomy}</g>
+      <!-- honeycomb -->
+      <g stroke="#eef4f6" stroke-width="2">${cells}</g>
+      <!-- orbit diagrams at the sides -->
+      <g stroke="#d6e2e8" stroke-opacity=".55" stroke-width="1.5">
+        <circle cx="120" cy="660" r="70"/><circle cx="120" cy="660" r="44" stroke-dasharray="6 8"/><circle cx="120" cy="660" r="11" fill="#d9b6a8" fill-opacity=".6"/>
+        <circle cx="830" cy="470" r="86" stroke-dasharray="70 14"/><circle cx="880" cy="420" r="46"/><circle cx="880" cy="420" r="26"/>
+        <circle cx="772" cy="470" r="20" fill="#d9c3b8" fill-opacity=".55"/><path d="M790,470 H905M120,590 V560M120,730 V760"/>
+        <circle cx="874" cy="414" r="3"/><circle cx="886" cy="414" r="3"/><circle cx="874" cy="426" r="3"/><circle cx="886" cy="426" r="3"/>
+        <circle cx="770" cy="385" r="4"/><circle cx="905" cy="500" r="4"/><circle cx="60" cy="660" r="4"/>
       </g>
-      <g stroke="#c9d6d4" stroke-opacity=".3" stroke-width="1.4">
-        <path d="M500 60V990M40 520H960"/>
-        <circle cx="830" cy="560" r="44"/><circle cx="830" cy="560" r="12"/>
-        <circle cx="170" cy="760" r="34"/>
-      </g>
+      <path d="${notes}" stroke="#d6e2e8" stroke-opacity=".38" stroke-width="1.2"/>
     </g>
+    <g class="tree-labels" fill="#e6eef2" fill-opacity=".55">${labels}</g>
   </svg>`;
 }
 
